@@ -1,0 +1,2 @@
+<section class="section-header"><h1>Aluno Bolsista</h1><p>Sala de pesquisa, projeto e retiradas autorizadas.</p></section>
+<div class="dashboard-grid"><a class="card card-link" href="<?= e(baseUrl('/bolsista/sala-pesquisa')) ?>"><h2>Sala de Pesquisa</h2><p>Projeto e vínculo.</p></a><a class="card card-link" href="<?= e(baseUrl('/bolsista/retiradas')) ?>"><h2>Retiradas</h2><p>Chaves e itens autorizados.</p></a></div>

@@ -1,0 +1,14 @@
+# Configuracoes locais e credenciais
+.env
+.env.*
+!.env.example
+
+# Configuracoes locais do Apache
+.htaccess
+
+# Arquivos temporarios do sistema e do editor
+Thumbs.db
+Desktop.ini
+*.tmp
+*.temp
+*.log
