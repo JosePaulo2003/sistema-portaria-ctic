@@ -87,7 +87,7 @@ function flash(?string $key = null, ?string $message = null): string
 
 function currentUser(): ?array
 {
-    if (empty($_SESSION['user_id'])) {
+    if (!authSessionIsValid()) {
         return null;
     }
     if (!empty($_SESSION['_user_cache']) && (int) $_SESSION['_user_cache']['id'] === (int) $_SESSION['user_id']) {
@@ -103,6 +103,47 @@ function currentUser(): ?array
     $user = $stmt->fetch();
     $_SESSION['_user_cache'] = $user ?: null;
     return $user ?: null;
+}
+
+function authSessionFingerprint(): string
+{
+    return hash('sha256', ($_SERVER['HTTP_USER_AGENT'] ?? '') . '|' . ($_SERVER['REMOTE_ADDR'] ?? ''));
+}
+
+function clearAuthSession(): void
+{
+    unset(
+        $_SESSION['user_id'],
+        $_SESSION['_user_cache'],
+        $_SESSION['_auth_fingerprint'],
+        $_SESSION['_auth_last_activity'],
+        $_SESSION['_auth_created_at']
+    );
+}
+
+function authSessionIsValid(): bool
+{
+    if (empty($_SESSION['user_id'])) {
+        return false;
+    }
+
+    $now = time();
+    $idleLimitSeconds = 3600;
+    $fingerprint = $_SESSION['_auth_fingerprint'] ?? '';
+    $lastActivity = (int) ($_SESSION['_auth_last_activity'] ?? 0);
+
+    if (!is_string($fingerprint) || !hash_equals($fingerprint, authSessionFingerprint())) {
+        clearAuthSession();
+        return false;
+    }
+
+    if ($lastActivity > 0 && ($now - $lastActivity) > $idleLimitSeconds) {
+        clearAuthSession();
+        return false;
+    }
+
+    $_SESSION['_auth_last_activity'] = $now;
+    return true;
 }
 
 function userProfile(): ?string

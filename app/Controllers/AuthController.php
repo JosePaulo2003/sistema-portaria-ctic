@@ -36,10 +36,15 @@ class AuthController extends Controller
             redirect('/login');
         }
 
-        session_regenerate_id(true);
-        $_SESSION['user_id'] = (int) $user['id'];
         $this->limparFalhasLogin($email);
-        unset($_SESSION['_user_cache']);
+
+        session_regenerate_id(true);
+        $_SESSION = [
+            'user_id' => (int) $user['id'],
+            '_auth_fingerprint' => authSessionFingerprint(),
+            '_auth_created_at' => time(),
+            '_auth_last_activity' => time(),
+        ];
 
         if (password_needs_rehash($user['senha_hash'], PASSWORD_DEFAULT)) {
             $userModel->update((int) $user['id'], ['senha_hash' => password_hash($password, PASSWORD_DEFAULT)]);
