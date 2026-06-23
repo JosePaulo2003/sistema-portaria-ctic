@@ -15,6 +15,13 @@ $nav = [
         ['Retiradas', '/administrativo/retiradas'],
         ['Disponibilidade', '/administrativo/disponibilidade-salas'],
     ],
+    'Diretor' => [
+        ['Direção', '/diretor'],
+        ['Chaves', '/diretor/chaves'],
+        ['Reservas', '/diretor/reservas'],
+        ['Movimentações', '/diretor/movimentacoes'],
+        ['Disponibilidade', '/diretor/disponibilidade'],
+    ],
     'Secretário de Curso' => [
         ['Secretário', '/secretario'],
         ['Períodos', '/secretario/periodos-academicos'],
@@ -64,6 +71,7 @@ $nav = [
 $developerGroups = [
     'Técnico' => $nav['Desenvolvedor'],
     'Administrativo' => $nav['Administrativo'],
+    'Direção' => $nav['Diretor'],
     'Secretaria' => $nav['Secretário de Curso'],
     'Portaria' => $nav['Agente de Portaria'],
     'Professor' => $nav['Professor'],

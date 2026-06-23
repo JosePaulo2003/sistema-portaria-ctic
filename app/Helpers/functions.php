@@ -149,6 +149,7 @@ function moduleForProfile(string $profile): string
     return match ($profile) {
         'Desenvolvedor' => '/desenvolvedor',
         'Administrativo' => '/administrativo',
+        'Diretor' => '/diretor',
         'Secretário de Curso' => '/secretario',
         'Agente de Portaria' => '/portaria',
         'Professor' => '/professor',

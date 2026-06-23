@@ -45,10 +45,12 @@ class Sala extends Model
     public function chavesDisponiveisParaRetirada(?array $user = null): array
     {
         $salas = $this->listDisponibilidade(['status' => 'Fechada']);
-        if (!$user || isDeveloper() || in_array($user['perfil_nome'] ?? '', ['Serviços Gerais', 'Administrativo'], true)) {
-            return $salas;
+        $perfil = $user['perfil_nome'] ?? '';
+        if (!$user || isDeveloper() || in_array($perfil, ['Serviços Gerais', 'Administrativo', 'Diretor'], true)) {
+            return $perfil === 'Diretor' ? $this->priorizarDiretoria($salas) : $salas;
         }
-        return array_values(array_filter($salas, fn (array $s): bool => $this->chavePodeSerRetirada((int) $s['id'], $user)));
+        $salas = array_values(array_filter($salas, fn (array $s): bool => $this->chavePodeSerRetirada((int) $s['id'], $user)));
+        return $perfil === 'Diretor' ? $this->priorizarDiretoria($salas) : $salas;
     }
 
     public function chavePodeSerRetirada(int $salaId, ?array $user): bool
@@ -56,10 +58,26 @@ class Sala extends Model
         if (!$user) {
             return false;
         }
-        if (isDeveloper() || in_array($user['perfil_nome'] ?? '', ['Serviços Gerais', 'Agente de Portaria', 'Administrativo'], true)) {
+        if (isDeveloper() || in_array($user['perfil_nome'] ?? '', ['Serviços Gerais', 'Agente de Portaria', 'Administrativo', 'Diretor'], true)) {
             return true;
         }
         return (new PermissaoSala())->usuarioTemAcesso((int) $user['id'], $salaId);
+    }
+
+    private function priorizarDiretoria(array $salas): array
+    {
+        usort($salas, function (array $a, array $b): int {
+            $prioridadeA = $this->ehDiretoria($a) ? 0 : 1;
+            $prioridadeB = $this->ehDiretoria($b) ? 0 : 1;
+            return $prioridadeA <=> $prioridadeB ?: strcasecmp((string) $a['nome'], (string) $b['nome']);
+        });
+        return $salas;
+    }
+
+    private function ehDiretoria(array $sala): bool
+    {
+        return mb_strtolower((string) ($sala['codigo'] ?? '')) === 'dir'
+            || str_contains(mb_strtolower((string) ($sala['nome'] ?? '')), 'diretoria');
     }
 
     public function detalhes(int $id): ?array

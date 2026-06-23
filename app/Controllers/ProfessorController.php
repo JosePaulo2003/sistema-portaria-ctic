@@ -133,7 +133,7 @@ class ProfessorController extends Controller
 
     public function retirarChave(): void
     {
-        requireProfile(['Professor', 'Aluno Bolsista', 'Serviços Gerais', 'Visitante', 'Secretário de Curso', 'Administrativo']);
+        requireProfile(['Professor', 'Aluno Bolsista', 'Serviços Gerais', 'Visitante', 'Secretário de Curso', 'Administrativo', 'Diretor']);
         verifyCsrf();
         $retorno = $this->retornoRetiradaChave();
         if (!$this->confirmarSenhaRetirada($retorno)) {
@@ -230,6 +230,7 @@ class ProfessorController extends Controller
         return match (true) {
             str_contains($uri, '/secretario/') => '/secretario/retirada-chaves',
             str_contains($uri, '/administrativo/') => '/administrativo/retiradas',
+            str_contains($uri, '/diretor/') => '/diretor/chaves',
             str_contains($uri, '/servicos-gerais/') => '/servicos-gerais/retiradas',
             str_contains($uri, '/bolsista/') => '/bolsista/retiradas',
             str_contains($uri, '/visitante/') => '/visitante/chave',

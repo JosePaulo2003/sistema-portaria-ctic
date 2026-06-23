@@ -6,6 +6,7 @@ use App\Controllers\AlunoBolsistaController;
 use App\Controllers\AlunoController;
 use App\Controllers\AuthController;
 use App\Controllers\DesenvolvedorController;
+use App\Controllers\DiretorController;
 use App\Controllers\FormularioUsuarioController;
 use App\Controllers\PerfilController;
 use App\Controllers\PortariaController;
@@ -46,6 +47,13 @@ $router->post('/desenvolvedor/advertencias', [DesenvolvedorController::class, 's
 $router->post('/desenvolvedor/advertencias/limpar', [DesenvolvedorController::class, 'limparAdvertencias']);
 $router->post('/desenvolvedor/bloqueios/atualizar', [DesenvolvedorController::class, 'atualizarBloqueio']);
 $router->post('/desenvolvedor/bloqueios/excluir', [DesenvolvedorController::class, 'excluirBloqueio']);
+
+$router->get('/diretor', [DiretorController::class, 'index']);
+$router->get('/diretor/chaves', [DiretorController::class, 'chaves']);
+$router->post('/diretor/chaves/retirar', [ProfessorController::class, 'retirarChave']);
+$router->get('/diretor/reservas', [DiretorController::class, 'reservas']);
+$router->get('/diretor/movimentacoes', [DiretorController::class, 'movimentacoes']);
+$router->get('/diretor/disponibilidade', [DiretorController::class, 'disponibilidade']);
 
 $router->get('/administrativo', [AdministrativoController::class, 'index']);
 $router->get('/administrativo/reservas-salas', [AdministrativoController::class, 'reservasSalas']);

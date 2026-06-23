@@ -3,6 +3,7 @@ USE sgrp;
 INSERT INTO perfis (nome, nivel) VALUES
 ('Desenvolvedor', 100),
 ('Administrativo', 80),
+('Diretor', 85),
 ('Secretário de Curso', 70),
 ('Agente de Portaria', 60),
 ('Professor', 50),
@@ -17,6 +18,8 @@ INSERT INTO usuarios (nome, email, senha_hash, perfil_id, situacao)
 SELECT 'Desenvolvedor Demo', 'desenvolvedor@sgrp.local', @senha, id, 'ativo' FROM perfis WHERE nome = 'Desenvolvedor';
 INSERT INTO usuarios (nome, email, senha_hash, perfil_id, situacao)
 SELECT 'Administrativo Demo', 'administrativo@sgrp.local', @senha, id, 'ativo' FROM perfis WHERE nome = 'Administrativo';
+INSERT INTO usuarios (nome, email, senha_hash, perfil_id, situacao)
+SELECT 'Diretor Demo', 'diretor@sgrp.local', @senha, id, 'ativo' FROM perfis WHERE nome = 'Diretor';
 INSERT INTO usuarios (nome, email, senha_hash, perfil_id, situacao)
 SELECT 'Secretário Demo', 'secretario@sgrp.local', @senha, id, 'ativo' FROM perfis WHERE nome = 'Secretário de Curso';
 INSERT INTO usuarios (nome, email, senha_hash, perfil_id, situacao)
