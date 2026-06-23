@@ -8,7 +8,9 @@ use App\Models\AdvertenciaChave;
 use App\Models\BloqueioChave;
 use App\Models\ConfiguracaoSistema;
 use App\Models\Movimentacao;
+use App\Models\PermissaoItem;
 use App\Models\PermissaoSala;
+use App\Models\Reserva;
 use App\Models\Sala;
 use App\Models\User;
 
@@ -60,7 +62,46 @@ class PortariaController extends Controller
     public function permissoes(): void
     {
         requireProfile('Agente de Portaria');
-        $this->view('portaria/permissoes', ['title' => 'Permissões', 'permissoes' => (new PermissaoSala())->withDetails()]);
+        $this->view('portaria/permissoes', [
+            'title' => 'Permissões',
+            'permissoesSalas' => (new PermissaoSala())->withDetails(),
+            'permissoesItens' => (new PermissaoItem())->withDetails(),
+        ]);
+    }
+
+    public function reservas(): void
+    {
+        requireProfile('Agente de Portaria');
+        $this->view('portaria/reservas', [
+            'title' => 'Reservas',
+            'reservas' => (new Reserva())->pendentes(),
+        ]);
+    }
+
+    public function atualizarReserva(): void
+    {
+        requireProfile('Agente de Portaria');
+        verifyCsrf();
+        $reservaModel = new Reserva();
+        $reserva = $reservaModel->find((int) ($_POST['id'] ?? 0));
+        if (!$reserva || $reserva['situacao'] !== 'pendente') {
+            flash('error', 'Reserva não encontrada ou já analisada.');
+            redirect('/portaria/reservas');
+        }
+
+        if (($_POST['acao'] ?? '') === 'aprovar') {
+            if (!$reservaModel->podeAprovar($reserva)) {
+                flash('error', 'Não foi possível aprovar: existe conflito ou a sala não está disponível.');
+                redirect('/portaria/reservas');
+            }
+            $reservaModel->update((int) $reserva['id'], ['situacao' => 'confirmada']);
+            flash('success', 'Reserva aprovada.');
+            redirect('/portaria/reservas');
+        }
+
+        $reservaModel->update((int) $reserva['id'], ['situacao' => 'cancelada']);
+        flash('success', 'Reserva recusada.');
+        redirect('/portaria/reservas');
     }
 
     public function visitantes(): void

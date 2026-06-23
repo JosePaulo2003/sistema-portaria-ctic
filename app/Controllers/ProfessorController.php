@@ -26,6 +26,7 @@ class ProfessorController extends Controller
     {
         requireProfile('Professor');
         verifyCsrf();
+        $this->validarReservaSala();
         (new Reserva())->create([
             'usuario_id' => currentUser()['id'],
             'sala_id' => (int) $_POST['sala_id'],
@@ -45,6 +46,7 @@ class ProfessorController extends Controller
     {
         requireProfile('Professor');
         verifyCsrf();
+        $this->validarReservaSala();
         (new Reserva())->update((int) $_POST['id'], [
             'sala_id' => (int) $_POST['sala_id'],
             'titulo' => trim((string) $_POST['titulo']),
@@ -134,6 +136,9 @@ class ProfessorController extends Controller
         requireProfile(['Professor', 'Aluno Bolsista', 'Serviços Gerais', 'Visitante', 'Secretário de Curso']);
         verifyCsrf();
         $retorno = $this->retornoRetiradaChave();
+        if (!$this->confirmarSenhaRetirada($retorno)) {
+            return;
+        }
         $bloqueio = $this->bloqueioAtualizadoParaUsuario((int) currentUser()['id']);
         if ($bloqueio) {
             flash('error', 'Você está temporariamente bloqueado para retirar chaves até ' . date('d/m/Y H:i', strtotime($bloqueio['fim_em'])) . '.');
@@ -163,6 +168,9 @@ class ProfessorController extends Controller
         requireProfile(['Professor', 'Aluno Bolsista', 'Serviços Gerais', 'Secretário de Curso']);
         verifyCsrf();
         $retorno = $this->retornoRetiradaItem();
+        if (!$this->confirmarSenhaRetirada($retorno)) {
+            return;
+        }
         $itemId = (int) $_POST['item_portaria_id'];
         if (!(new ItemPortaria())->podeSerRetirado($itemId)) {
             flash('error', 'Este item não está disponível para retirada.');
@@ -180,6 +188,18 @@ class ProfessorController extends Controller
         ]);
         flash('success', 'Retirada de item registrada.');
         redirect($retorno);
+    }
+
+    private function confirmarSenhaRetirada(string $retorno): bool
+    {
+        $senha = (string) ($_POST['senha_confirmacao'] ?? '');
+        $usuario = (new User())->find((int) currentUser()['id']);
+        if ($senha === '' || !$usuario || !password_verify($senha, (string) $usuario['senha_hash'])) {
+            flash('error', 'Confirme sua senha corretamente para registrar a retirada.');
+            redirect($retorno);
+            return false;
+        }
+        return true;
     }
 
     private function bloqueioAtualizadoParaUsuario(int $usuarioId): ?array
@@ -225,5 +245,31 @@ class ProfessorController extends Controller
             str_contains($uri, '/bolsista/') => '/bolsista/retiradas',
             default => '/professor/retiradas',
         };
+    }
+
+    private function validarReservaSala(): void
+    {
+        $inicio = $this->criarDataHora((string) ($_POST['inicio_em'] ?? ''));
+        $fim = $this->criarDataHora((string) ($_POST['fim_em'] ?? ''));
+        $agora = new \DateTimeImmutable();
+
+        if (!$inicio || !$fim) {
+            flash('error', 'Informe datas e horários válidos para a reserva.');
+            redirect('/professor/reservas-salas');
+        }
+        if ($inicio < $agora || $fim < $agora) {
+            flash('error', 'Não é permitido cadastrar reservas com data anterior ao momento atual.');
+            redirect('/professor/reservas-salas');
+        }
+        if ($fim <= $inicio) {
+            flash('error', 'O fim da reserva precisa ser posterior ao início.');
+            redirect('/professor/reservas-salas');
+        }
+    }
+
+    private function criarDataHora(string $valor): ?\DateTimeImmutable
+    {
+        $data = \DateTimeImmutable::createFromFormat('Y-m-d\TH:i', $valor);
+        return $data instanceof \DateTimeImmutable ? $data : null;
     }
 }

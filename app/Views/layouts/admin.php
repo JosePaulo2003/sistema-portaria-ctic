@@ -5,15 +5,14 @@ $nav = [
     'Desenvolvedor' => [
         ['Desenvolvedor', '/desenvolvedor'],
         ['Usuários', '/desenvolvedor/usuarios'],
+        ['Solicitações', '/desenvolvedor/usuarios/solicitacoes'],
         ['Logs', '/desenvolvedor/logs'],
         ['Advertências', '/desenvolvedor/advertencias'],
     ],
     'Administrativo' => [
         ['Administrativo', '/administrativo'],
         ['Reservas', '/administrativo/reservas-salas'],
-        ['Empréstimos', '/administrativo/emprestimos-portaria'],
         ['Retiradas', '/administrativo/retiradas'],
-        ['Histórico', '/administrativo/historico'],
         ['Disponibilidade', '/administrativo/disponibilidade-salas'],
     ],
     'Secretário de Curso' => [
@@ -30,6 +29,7 @@ $nav = [
     'Agente de Portaria' => [
         ['Portaria', '/portaria'],
         ['Retiradas', '/portaria/retiradas'],
+        ['Reservas', '/portaria/reservas'],
         ['Permissões', '/portaria/permissoes'],
         ['Visitantes', '/portaria/visitantes'],
         ['Salas Hoje', '/portaria/salas-hoje'],

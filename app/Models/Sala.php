@@ -82,7 +82,13 @@ class Sala extends Model
 
     public function aulasDaSala(string $nomeSala): array
     {
-        $stmt = $this->db()->prepare('SELECT * FROM reservas_aula WHERE sala_nome = ? ORDER BY dia_semana, horario_inicio');
+        $stmt = $this->db()->prepare(
+            'SELECT ra.*, u.nome AS professor_nome
+             FROM reservas_aula ra
+             JOIN usuarios u ON u.id = ra.professor_id
+             WHERE ra.sala_nome = ?
+             ORDER BY ra.dia_semana, ra.horario_inicio'
+        );
         $stmt->execute([$nomeSala]);
         return $stmt->fetchAll();
     }

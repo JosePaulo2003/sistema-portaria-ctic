@@ -25,6 +25,7 @@
                             <?= csrfField() ?>
                             <input type="hidden" name="item_portaria_id" value="<?= e($item['id']) ?>">
                             <input type="text" name="observacao" placeholder="<?= e($observacaoItemPlaceholder ?? 'Opcional') ?>">
+                            <input type="password" name="senha_confirmacao" placeholder="Confirme sua senha" required autocomplete="current-password">
                             <button class="button" type="submit">Retirar item</button>
                         </form>
                     </td>

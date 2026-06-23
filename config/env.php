@@ -19,4 +19,5 @@ return [
     'app_env' => $_ENV['APP_ENV'] ?? 'local',
     'app_debug' => filter_var($_ENV['APP_DEBUG'] ?? true, FILTER_VALIDATE_BOOL),
     'app_base_path' => $_ENV['APP_BASE_PATH'] ?? '',
+    'form_webhook_token' => $_ENV['FORM_WEBHOOK_TOKEN'] ?? '',
 ];

@@ -138,16 +138,24 @@ function requireProfile(string|array $profiles): void
 
 function moduleForProfile(string $profile): string
 {
+    $normalizado = mb_strtolower($profile);
+    if (str_contains($normalizado, 'secret')) {
+        return '/secretario';
+    }
+    if (str_contains($normalizado, 'servi') && str_contains($normalizado, 'gerais')) {
+        return '/servicos-gerais';
+    }
+
     return match ($profile) {
         'Desenvolvedor' => '/desenvolvedor',
         'Administrativo' => '/administrativo',
-        'SecretÃ¡rio de Curso' => '/secretario',
+        'Secretário de Curso' => '/secretario',
         'Agente de Portaria' => '/portaria',
         'Professor' => '/professor',
         'Aluno Bolsista' => '/bolsista',
         'Aluno' => '/aluno',
         'Visitante' => '/visitante',
-        'ServiÃ§os Gerais' => '/servicos-gerais',
+        'Serviços Gerais' => '/servicos-gerais',
         default => '/login',
     };
 }

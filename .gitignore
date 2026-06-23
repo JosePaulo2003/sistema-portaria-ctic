@@ -3,8 +3,27 @@
 .env.*
 !.env.example
 
-# Configuracoes locais do Apache
-.htaccess
+# Sessoes, logs e arquivos temporarios da aplicacao
+storage/sessions/*
+storage/logs/*
+tmp/*
+!storage/sessions/.gitkeep
+!storage/logs/.gitkeep
+!tmp/.gitkeep
+
+# Uploads feitos pelos usuarios
+public/uploads/*
+!public/uploads/.htaccess
+!public/uploads/.gitkeep
+
+# Dumps, backups e pacotes locais
+*.sql.gz
+*.dump
+*.bak
+*.backup
+*.zip
+*.rar
+*.7z
 
 # Arquivos temporarios do sistema e do editor
 Thumbs.db

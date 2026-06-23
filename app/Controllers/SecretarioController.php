@@ -22,8 +22,8 @@ class SecretarioController extends Controller
     public function reservasCurso(): void { requireProfile('Secretário de Curso'); $this->view('secretario/reservas-curso', ['title' => 'Reservas do Curso']); }
 
     public function periodos(): void { requireProfile('Secretário de Curso'); $this->view('secretario/periodos-academicos', ['title' => 'Períodos', 'periodos' => (new PeriodoAcademico())->all('data_inicio DESC')]); }
-    public function salvarPeriodo(): void { requireProfile('Secretário de Curso'); verifyCsrf(); (new PeriodoAcademico())->create($this->periodoData()); flash('success', 'Período salvo.'); redirect('/secretario/periodos-academicos'); }
-    public function atualizarPeriodo(): void { requireProfile('Secretário de Curso'); verifyCsrf(); (new PeriodoAcademico())->update((int) $_POST['id'], $this->periodoData()); flash('success', 'Período atualizado.'); redirect('/secretario/periodos-academicos'); }
+    public function salvarPeriodo(): void { requireProfile('Secretário de Curso'); verifyCsrf(); $this->validarPeriodo(); (new PeriodoAcademico())->create($this->periodoData()); flash('success', 'Período salvo.'); redirect('/secretario/periodos-academicos'); }
+    public function atualizarPeriodo(): void { requireProfile('Secretário de Curso'); verifyCsrf(); $this->validarPeriodo(); (new PeriodoAcademico())->update((int) $_POST['id'], $this->periodoData()); flash('success', 'Período atualizado.'); redirect('/secretario/periodos-academicos'); }
     public function excluirPeriodo(): void { requireProfile('Secretário de Curso'); verifyCsrf(); (new PeriodoAcademico())->delete((int) $_POST['id']); flash('success', 'Período excluído.'); redirect('/secretario/periodos-academicos'); }
 
     public function materias(): void
@@ -120,8 +120,8 @@ class SecretarioController extends Controller
         requireProfile('Secretário de Curso');
         $this->view('secretario/chaves-autorizadas', ['title' => 'Chaves Autorizadas', 'permissoes' => (new PermissaoSala())->withDetails(), 'usuarios' => (new User())->allWithProfile(), 'salas' => (new Sala())->all('nome')]);
     }
-    public function salvarChaveAutorizada(): void { requireProfile(['Secretário de Curso', 'Professor']); verifyCsrf(); (new PermissaoSala())->create($this->permissaoData()); flash('success', 'Permissão salva.'); redirect('/secretario/chaves-autorizadas'); }
-    public function atualizarChaveAutorizada(): void { requireProfile('Secretário de Curso'); verifyCsrf(); (new PermissaoSala())->update((int) $_POST['id'], $this->permissaoData()); flash('success', 'Permissão atualizada.'); redirect('/secretario/chaves-autorizadas'); }
+    public function salvarChaveAutorizada(): void { requireProfile(['Secretário de Curso', 'Professor']); verifyCsrf(); $this->validarPermissao(); (new PermissaoSala())->create($this->permissaoData()); flash('success', 'Permissão salva.'); redirect('/secretario/chaves-autorizadas'); }
+    public function atualizarChaveAutorizada(): void { requireProfile('Secretário de Curso'); verifyCsrf(); $this->validarPermissao(); (new PermissaoSala())->update((int) $_POST['id'], $this->permissaoData()); flash('success', 'Permissão atualizada.'); redirect('/secretario/chaves-autorizadas'); }
     public function excluirChaveAutorizada(): void { requireProfile('Secretário de Curso'); verifyCsrf(); (new PermissaoSala())->delete((int) $_POST['id']); flash('success', 'Permissão excluída.'); redirect('/secretario/chaves-autorizadas'); }
 
     public function retiradaChaves(): void
@@ -141,4 +141,59 @@ class SecretarioController extends Controller
     private function salaData(): array { return ['nome' => trim((string) $_POST['nome']), 'codigo' => $_POST['codigo'] ?: null, 'bloco' => $_POST['bloco'] ?: null, 'capacidade' => $_POST['capacidade'] !== '' ? (int) $_POST['capacidade'] : null, 'tipo_ambiente' => $_POST['tipo_ambiente'], 'situacao' => $_POST['situacao'] ?? 'disponivel', 'descricao' => $_POST['descricao'] ?? null]; }
     private function itemData(): array { return ['nome' => trim((string) $_POST['nome']), 'codigo' => $_POST['codigo'] ?: null, 'categoria' => $_POST['categoria'] ?: null, 'quantidade' => max(0, (int) ($_POST['quantidade'] ?? 1)), 'situacao' => $_POST['situacao'] ?? 'disponivel', 'descricao' => $_POST['descricao'] ?? null]; }
     private function permissaoData(): array { return ['usuario_id' => (int) $_POST['usuario_id'], 'sala_id' => !empty($_POST['acesso_total']) ? null : (int) $_POST['sala_id'], 'acesso_total' => !empty($_POST['acesso_total']) ? 1 : 0, 'autorizado_por' => currentUser()['id'], 'inicio_autorizacao' => $_POST['inicio_autorizacao'] ?: null, 'expira_em' => !empty($_POST['nunca_expirar']) ? null : ($_POST['expira_em'] ?: null), 'dias_semana' => !empty($_POST['dias_semana']) ? implode(', ', (array) $_POST['dias_semana']) : null, 'observacao' => $_POST['observacao'] ?? null, 'situacao' => $_POST['situacao'] ?? 'ativa']; }
+
+    private function validarPeriodo(): void
+    {
+        $inicio = $this->criarData((string) ($_POST['data_inicio'] ?? ''));
+        $fim = $this->criarData((string) ($_POST['data_fim'] ?? ''));
+        $hoje = new \DateTimeImmutable('today');
+
+        if (!$inicio || !$fim) {
+            flash('error', 'Informe datas válidas para o período.');
+            redirect('/secretario/periodos-academicos');
+        }
+        if ($inicio < $hoje || $fim < $hoje) {
+            flash('error', 'Não é permitido cadastrar datas anteriores a hoje.');
+            redirect('/secretario/periodos-academicos');
+        }
+        if ($fim < $inicio) {
+            flash('error', 'A data final não pode ser anterior à data inicial.');
+            redirect('/secretario/periodos-academicos');
+        }
+    }
+
+    private function validarPermissao(): void
+    {
+        $inicio = $this->criarDataHora((string) ($_POST['inicio_autorizacao'] ?? ''));
+        $expira = !empty($_POST['nunca_expirar']) ? null : $this->criarDataHora((string) ($_POST['expira_em'] ?? ''));
+        $agora = new \DateTimeImmutable();
+
+        if (!empty($_POST['inicio_autorizacao']) && (!$inicio || $inicio < $agora)) {
+            flash('error', 'O início da autorização não pode estar no passado.');
+            redirect('/secretario/chaves-autorizadas');
+        }
+        if (empty($_POST['nunca_expirar']) && !empty($_POST['expira_em']) && (!$expira || $expira < $agora)) {
+            flash('error', 'A expiração da autorização não pode estar no passado.');
+            redirect('/secretario/chaves-autorizadas');
+        }
+        if ($inicio && $expira && $expira < $inicio) {
+            flash('error', 'A expiração não pode ser anterior ao início da autorização.');
+            redirect('/secretario/chaves-autorizadas');
+        }
+    }
+
+    private function criarData(string $valor): ?\DateTimeImmutable
+    {
+        $data = \DateTimeImmutable::createFromFormat('Y-m-d', $valor);
+        return $data instanceof \DateTimeImmutable ? $data->setTime(0, 0) : null;
+    }
+
+    private function criarDataHora(string $valor): ?\DateTimeImmutable
+    {
+        if ($valor === '') {
+            return null;
+        }
+        $data = \DateTimeImmutable::createFromFormat('Y-m-d\TH:i', $valor);
+        return $data instanceof \DateTimeImmutable ? $data : null;
+    }
 }

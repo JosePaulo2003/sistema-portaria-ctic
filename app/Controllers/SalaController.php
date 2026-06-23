@@ -19,9 +19,17 @@ class SalaController extends Controller
             echo 'Sala não encontrada.';
             return;
         }
+        $status = null;
+        foreach ($model->listDisponibilidade() as $salaComStatus) {
+            if ((int) $salaComStatus['id'] === (int) $sala['id']) {
+                $status = $salaComStatus;
+                break;
+            }
+        }
         $this->view('salas/detalhes', [
             'title' => $sala['nome'],
             'sala' => $sala,
+            'status' => $status,
             'reservas' => $model->reservasDaSala((int) $sala['id']),
             'aulas' => $model->aulasDaSala($sala['nome']),
             'movimentacoes' => $model->movimentacoesDaSala((int) $sala['id']),

@@ -23,6 +23,7 @@
                             <?= csrfField() ?>
                             <input type="hidden" name="sala_id" value="<?= e($s['id']) ?>">
                             <input type="text" name="observacao" placeholder="<?= e($observacaoPlaceholder ?? 'Opcional') ?>">
+                            <input type="password" name="senha_confirmacao" placeholder="Confirme sua senha" required autocomplete="current-password">
                             <button class="button" type="submit">Retirar chave</button>
                         </form>
                     </td>

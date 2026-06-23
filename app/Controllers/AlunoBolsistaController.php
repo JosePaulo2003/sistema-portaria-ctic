@@ -11,7 +11,7 @@ use App\Models\Sala;
 class AlunoBolsistaController extends Controller
 {
     public function index(): void { requireProfile('Aluno Bolsista'); $this->view('aluno-bolsista/index', ['title' => 'Bolsista']); }
-    public function salaPesquisa(): void { requireProfile('Aluno Bolsista'); $this->view('aluno-bolsista/sala-pesquisa', ['title' => 'Sala de Pesquisa']); }
+    public function salaPesquisa(): void { requireProfile('Aluno Bolsista'); $this->view('aluno-bolsista/sala-pesquisa', ['title' => 'Sala de Pesquisa', 'user' => currentUser()]); }
     public function retiradas(): void
     {
         requireProfile('Aluno Bolsista');

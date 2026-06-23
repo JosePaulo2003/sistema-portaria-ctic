@@ -1,4 +1,10 @@
-<section class="section-header"><h1>Usuários</h1><a class="button" href="<?= e(baseUrl('/usuarios/cadastro')) ?>">Novo usuário</a></section>
+<section class="section-header">
+    <h1>Usuários</h1>
+    <div class="inline-actions">
+        <a class="button button--secondary" href="<?= e(baseUrl('/desenvolvedor/usuarios/solicitacoes')) ?>">Solicitações</a>
+        <a class="button" href="<?= e(baseUrl('/usuarios/cadastro')) ?>">Novo usuário</a>
+    </div>
+</section>
 <div class="card table-wrap"><table><thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Situação</th><th>Ações</th></tr></thead><tbody>
 <?php foreach ($usuarios as $usuario): ?><tr>
 <td><?= e($usuario['nome']) ?></td>

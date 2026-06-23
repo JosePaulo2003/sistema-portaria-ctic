@@ -1,0 +1,22 @@
+RewriteEngine On
+RewriteBase /sgrp/
+
+Options -Indexes
+ServerSignature Off
+
+<IfModule mod_headers.c>
+    Header always setifempty X-Content-Type-Options "nosniff"
+    Header always setifempty Referrer-Policy "strict-origin-when-cross-origin"
+    Header always setifempty Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+</IfModule>
+
+<FilesMatch "^(\.env|\.git|composer\.(json|lock)|README\.md)$">
+    Require all denied
+</FilesMatch>
+
+RewriteRule ^(app|config|database|routes|storage)(/|$) - [F,L,NC]
+RewriteRule ^public/uploads/.*\.(php|phtml|phar|cgi|pl|asp|aspx|jsp)$ - [F,L,NC]
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.php [QSA,L]

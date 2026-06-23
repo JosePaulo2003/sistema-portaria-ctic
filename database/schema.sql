@@ -8,6 +8,7 @@ DROP TABLE IF EXISTS advertencias_chaves;
 DROP TABLE IF EXISTS notificacoes_portaria;
 DROP TABLE IF EXISTS logs_sistema;
 DROP TABLE IF EXISTS logs_auditoria;
+DROP TABLE IF EXISTS solicitacoes_usuarios;
 DROP TABLE IF EXISTS movimentacoes;
 DROP TABLE IF EXISTS permissoes_itens;
 DROP TABLE IF EXISTS permissoes_salas;
@@ -47,6 +48,26 @@ CREATE TABLE usuarios (
   ultimo_login_em DATETIME NULL,
   CONSTRAINT fk_usuarios_perfil FOREIGN KEY (perfil_id) REFERENCES perfis(id),
   CONSTRAINT fk_usuarios_professor FOREIGN KEY (professor_indicador_id) REFERENCES usuarios(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE solicitacoes_usuarios (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  nome VARCHAR(150) NOT NULL,
+  email VARCHAR(190) NOT NULL,
+  perfil_solicitado VARCHAR(100) NOT NULL,
+  telefone VARCHAR(40) NULL,
+  matricula VARCHAR(80) NULL,
+  observacao TEXT NULL,
+  origem VARCHAR(80) NOT NULL DEFAULT 'google_forms',
+  payload_json JSON NULL,
+  situacao ENUM('pendente','aprovada','recusada') NOT NULL DEFAULT 'pendente',
+  aprovado_por INT NULL,
+  aprovado_em DATETIME NULL,
+  usuario_id INT NULL,
+  criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  atualizado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_sol_usuario_aprovador FOREIGN KEY (aprovado_por) REFERENCES usuarios(id) ON DELETE SET NULL,
+  CONSTRAINT fk_sol_usuario_criado FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE salas (

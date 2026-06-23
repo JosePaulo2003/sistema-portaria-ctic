@@ -6,6 +6,7 @@ use App\Controllers\AlunoBolsistaController;
 use App\Controllers\AlunoController;
 use App\Controllers\AuthController;
 use App\Controllers\DesenvolvedorController;
+use App\Controllers\FormularioUsuarioController;
 use App\Controllers\PerfilController;
 use App\Controllers\PortariaController;
 use App\Controllers\ProfessorController;
@@ -23,12 +24,16 @@ $router->get('/', fn () => currentUser() ? redirect(moduleForProfile(userProfile
 $router->get('/login', [AuthController::class, 'loginForm']);
 $router->post('/login', [AuthController::class, 'login']);
 $router->post('/logout', [AuthController::class, 'logout']);
+$router->post('/integracoes/google-form/usuarios', [FormularioUsuarioController::class, 'receber']);
 $router->get('/perfil', [PerfilController::class, 'edit']);
 $router->post('/perfil', [PerfilController::class, 'update']);
 $router->get('/salas/detalhes', [SalaController::class, 'detalhes']);
 
 $router->get('/desenvolvedor', [DesenvolvedorController::class, 'index']);
 $router->get('/desenvolvedor/usuarios', [UsuarioController::class, 'index']);
+$router->get('/desenvolvedor/usuarios/solicitacoes', [UsuarioController::class, 'solicitacoes']);
+$router->post('/desenvolvedor/usuarios/solicitacoes/aprovar', [UsuarioController::class, 'aprovarSolicitacao']);
+$router->post('/desenvolvedor/usuarios/solicitacoes/recusar', [UsuarioController::class, 'recusarSolicitacao']);
 $router->get('/usuarios/cadastro', [UsuarioController::class, 'create']);
 $router->post('/usuarios/cadastro', [UsuarioController::class, 'store']);
 $router->get('/usuarios/editar', [UsuarioController::class, 'edit']);
@@ -44,9 +49,8 @@ $router->post('/desenvolvedor/bloqueios/excluir', [DesenvolvedorController::clas
 
 $router->get('/administrativo', [AdministrativoController::class, 'index']);
 $router->get('/administrativo/reservas-salas', [AdministrativoController::class, 'reservasSalas']);
-$router->get('/administrativo/emprestimos-portaria', [AdministrativoController::class, 'emprestimosPortaria']);
+$router->post('/administrativo/reservas-salas', [AdministrativoController::class, 'salvarReservaSala']);
 $router->get('/administrativo/retiradas', [AdministrativoController::class, 'retiradas']);
-$router->get('/administrativo/historico', [AdministrativoController::class, 'historico']);
 $router->get('/administrativo/disponibilidade-salas', [AdministrativoController::class, 'disponibilidadeSalas']);
 
 $router->get('/secretario', [SecretarioController::class, 'index']);
@@ -96,6 +100,8 @@ $router->get('/portaria', [PortariaController::class, 'index']);
 $router->get('/portaria/retiradas', [PortariaController::class, 'retiradas']);
 $router->post('/portaria/retiradas/devolver-chave', [PortariaController::class, 'devolverChave']);
 $router->post('/portaria/retiradas/devolver-item', [PortariaController::class, 'devolverItem']);
+$router->get('/portaria/reservas', [PortariaController::class, 'reservas']);
+$router->post('/portaria/reservas/atualizar', [PortariaController::class, 'atualizarReserva']);
 $router->get('/portaria/permissoes', [PortariaController::class, 'permissoes']);
 $router->get('/portaria/visitantes', [PortariaController::class, 'visitantes']);
 $router->post('/portaria/visitantes', [PortariaController::class, 'salvarVisitante']);
