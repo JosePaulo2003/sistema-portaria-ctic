@@ -45,7 +45,7 @@ class Sala extends Model
     public function chavesDisponiveisParaRetirada(?array $user = null): array
     {
         $salas = $this->listDisponibilidade(['status' => 'Fechada']);
-        if (!$user || isDeveloper() || ($user['perfil_nome'] ?? '') === 'Serviços Gerais') {
+        if (!$user || isDeveloper() || in_array($user['perfil_nome'] ?? '', ['Serviços Gerais', 'Administrativo'], true)) {
             return $salas;
         }
         return array_values(array_filter($salas, fn (array $s): bool => $this->chavePodeSerRetirada((int) $s['id'], $user)));
@@ -56,7 +56,7 @@ class Sala extends Model
         if (!$user) {
             return false;
         }
-        if (isDeveloper() || in_array($user['perfil_nome'] ?? '', ['Serviços Gerais', 'Agente de Portaria'], true)) {
+        if (isDeveloper() || in_array($user['perfil_nome'] ?? '', ['Serviços Gerais', 'Agente de Portaria', 'Administrativo'], true)) {
             return true;
         }
         return (new PermissaoSala())->usuarioTemAcesso((int) $user['id'], $salaId);

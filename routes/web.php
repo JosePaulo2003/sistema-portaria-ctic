@@ -51,6 +51,8 @@ $router->get('/administrativo', [AdministrativoController::class, 'index']);
 $router->get('/administrativo/reservas-salas', [AdministrativoController::class, 'reservasSalas']);
 $router->post('/administrativo/reservas-salas', [AdministrativoController::class, 'salvarReservaSala']);
 $router->get('/administrativo/retiradas', [AdministrativoController::class, 'retiradas']);
+$router->post('/administrativo/retiradas/chave', [ProfessorController::class, 'retirarChave']);
+$router->post('/administrativo/retiradas/item', [ProfessorController::class, 'retirarItem']);
 $router->get('/administrativo/disponibilidade-salas', [AdministrativoController::class, 'disponibilidadeSalas']);
 
 $router->get('/secretario', [SecretarioController::class, 'index']);

@@ -5,7 +5,7 @@ namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Core\Database;
-use App\Models\Movimentacao;
+use App\Models\ItemPortaria;
 use App\Models\Reserva;
 use App\Models\Sala;
 
@@ -33,7 +33,15 @@ class AdministrativoController extends Controller
         flash('success', 'Reserva solicitada. Aguarde a aprovação da Portaria.');
         redirect('/administrativo/reservas-salas');
     }
-    public function retiradas(): void { requireProfile('Administrativo'); $this->view('administrativo/retiradas', ['title' => 'Retiradas', 'movimentacoes' => (new Movimentacao())->abertas()]); }
+    public function retiradas(): void
+    {
+        requireProfile('Administrativo');
+        $this->view('administrativo/retiradas', [
+            'title' => 'Retiradas',
+            'salas' => (new Sala())->chavesDisponiveisParaRetirada(currentUser()),
+            'itens' => (new ItemPortaria())->disponiveisParaRetirada(),
+        ]);
+    }
     public function disponibilidadeSalas(): void { requireProfile('Administrativo'); $this->view('administrativo/disponibilidade-salas', ['title' => 'Disponibilidade', 'salas' => (new Sala())->listDisponibilidade($_GET)]); }
 
     private function validarReservaAdministrativa(): void

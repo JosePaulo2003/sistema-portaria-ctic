@@ -133,7 +133,7 @@ class ProfessorController extends Controller
 
     public function retirarChave(): void
     {
-        requireProfile(['Professor', 'Aluno Bolsista', 'Serviços Gerais', 'Visitante', 'Secretário de Curso']);
+        requireProfile(['Professor', 'Aluno Bolsista', 'Serviços Gerais', 'Visitante', 'Secretário de Curso', 'Administrativo']);
         verifyCsrf();
         $retorno = $this->retornoRetiradaChave();
         if (!$this->confirmarSenhaRetirada($retorno)) {
@@ -165,7 +165,7 @@ class ProfessorController extends Controller
 
     public function retirarItem(): void
     {
-        requireProfile(['Professor', 'Aluno Bolsista', 'Serviços Gerais', 'Secretário de Curso']);
+        requireProfile(['Professor', 'Aluno Bolsista', 'Serviços Gerais', 'Secretário de Curso', 'Administrativo']);
         verifyCsrf();
         $retorno = $this->retornoRetiradaItem();
         if (!$this->confirmarSenhaRetirada($retorno)) {
@@ -229,6 +229,7 @@ class ProfessorController extends Controller
         $uri = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
         return match (true) {
             str_contains($uri, '/secretario/') => '/secretario/retirada-chaves',
+            str_contains($uri, '/administrativo/') => '/administrativo/retiradas',
             str_contains($uri, '/servicos-gerais/') => '/servicos-gerais/retiradas',
             str_contains($uri, '/bolsista/') => '/bolsista/retiradas',
             str_contains($uri, '/visitante/') => '/visitante/chave',
@@ -241,6 +242,7 @@ class ProfessorController extends Controller
         $uri = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
         return match (true) {
             str_contains($uri, '/secretario/') => '/secretario/retirada-chaves',
+            str_contains($uri, '/administrativo/') => '/administrativo/retiradas',
             str_contains($uri, '/servicos-gerais/') => '/servicos-gerais/retiradas',
             str_contains($uri, '/bolsista/') => '/bolsista/retiradas',
             default => '/professor/retiradas',
