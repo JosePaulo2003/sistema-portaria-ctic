@@ -4,7 +4,7 @@
     <?= csrfField() ?>
     <label>Nome<input name="nome" required></label>
     <label>E-mail<input type="email" name="email" required></label>
-    <label>Senha<input name="senha" placeholder="12345678"></label>
+    <label>Senha<input type="password" name="senha" placeholder="Informe a senha inicial" required></label>
     <label>Professor
         <select name="professor_indicador_id">
             <option value="">Sem professor</option>

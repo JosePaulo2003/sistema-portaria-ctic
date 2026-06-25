@@ -105,10 +105,16 @@ class UsuarioController extends Controller
             redirect('/desenvolvedor/usuarios/solicitacoes');
         }
 
+        $senha = trim((string) ($_POST['senha'] ?? ''));
+        if ($senha === '') {
+            flash('error', 'Informe uma senha inicial para aprovar a solicitação.');
+            redirect('/desenvolvedor/usuarios/solicitacoes');
+        }
+
         $usuarioId = (new User())->create([
             'nome' => trim((string) ($_POST['nome'] ?: $solicitacao['nome'])),
             'email' => trim((string) ($_POST['email'] ?: $solicitacao['email'])),
-            'senha_hash' => password_hash((string) ($_POST['senha'] ?: '12345678'), PASSWORD_DEFAULT),
+            'senha_hash' => password_hash($senha, PASSWORD_DEFAULT),
             'perfil_id' => (int) $_POST['perfil_id'],
             'situacao' => $_POST['situacao'] ?? 'ativo',
         ]);

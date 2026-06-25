@@ -66,11 +66,16 @@ class SecretarioController extends Controller
     {
         requireProfile('Secretário de Curso');
         verifyCsrf();
+        $senha = trim((string) ($_POST['senha'] ?? ''));
+        if ($senha === '') {
+            flash('error', 'Informe uma senha inicial para o bolsista.');
+            redirect('/secretario/bolsistas');
+        }
         $perfilId = Database::pdo()->query("SELECT id FROM perfis WHERE nome = 'Aluno Bolsista'")->fetchColumn();
         (new User())->create([
             'nome' => trim((string) $_POST['nome']),
             'email' => trim((string) $_POST['email']),
-            'senha_hash' => password_hash((string) ($_POST['senha'] ?: '12345678'), PASSWORD_DEFAULT),
+            'senha_hash' => password_hash($senha, PASSWORD_DEFAULT),
             'perfil_id' => (int) $perfilId,
             'situacao' => $_POST['situacao'] ?? 'pendente',
             'professor_indicador_id' => $_POST['professor_indicador_id'] ?: null,

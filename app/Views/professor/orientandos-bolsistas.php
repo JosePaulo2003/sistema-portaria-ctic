@@ -4,7 +4,7 @@
     <?= csrfField() ?>
     <label>Nome<input name="nome" required></label>
     <label>E-mail<input type="email" name="email" required></label>
-    <label>Senha<input name="senha" placeholder="12345678"></label>
+    <label>Senha<input type="password" name="senha" placeholder="Informe a senha inicial" required></label>
     <label class="full">Projeto de pesquisa<input name="projeto_pesquisa"></label>
     <div class="form-actions"><button class="button">Cadastrar orientando</button></div>
 </form>

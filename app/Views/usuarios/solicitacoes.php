@@ -49,7 +49,7 @@
                                         <option value="pendente">pendente</option>
                                     </select>
                                 </label>
-                                <label>Senha inicial<input name="senha" value="12345678"></label>
+                                <label>Senha inicial<input type="password" name="senha" placeholder="Informe a senha inicial" required></label>
                                 <button class="button" type="submit">Aprovar e criar</button>
                             </form>
                             <form method="post" action="<?= e(baseUrl('/desenvolvedor/usuarios/solicitacoes/recusar')) ?>" class="inline-actions">

@@ -7,6 +7,7 @@
 storage/sessions/*
 storage/logs/*
 tmp/*
+output/*
 !storage/sessions/.gitkeep
 !storage/logs/.gitkeep
 !tmp/.gitkeep
@@ -26,6 +27,8 @@ public/uploads/*
 *.7z
 
 # Arquivos temporarios do sistema e do editor
+__pycache__/
+*.pyc
 Thumbs.db
 Desktop.ini
 *.tmp

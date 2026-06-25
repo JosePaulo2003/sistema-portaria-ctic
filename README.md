@@ -1,60 +1,67 @@
 # SGRP - Sistema de Gestão de Recursos Pedagógicos
 
-Sistema web em PHP puro, MVC simples, PDO e MySQL/MariaDB, compatível com XAMPP e caminho base `/sgrp`.
+Sistema web em PHP puro, MVC simples, PDO e MySQL/MariaDB, compatível com XAMPP, Apache em Linux e caminho base configurável.
 
 ## Requisitos
 
-- XAMPP com Apache, PHP 8.1+ e MySQL/MariaDB
+- PHP 8.1+
+- Apache com `mod_rewrite`
+- MySQL ou MariaDB
 - Extensão PDO MySQL habilitada
 - Navegador moderno
 
-## Instalação no XAMPP
+## Instalação
 
-1. Coloque este projeto em `C:\xampp\htdocs\sgrp`.
-2. Crie o banco e as tabelas importando `database/schema.sql` no phpMyAdmin ou no terminal MySQL.
-3. Importe os dados iniciais de `database/seeds.sql`.
-4. Copie `.env.example` para `.env` e ajuste usuário/senha do banco, se necessário.
-5. Acesse `http://localhost/sgrp`.
+1. Coloque este projeto no diretório do Apache.
+2. Copie `.env.example` para `.env`.
+3. Ajuste as credenciais do banco no `.env`.
+4. Importe `database/schema.sql`.
+5. Importe `database/seeds.sql`.
+6. Acesse o endereço configurado no Apache.
 
-## Banco de dados
-
-Banco padrão: `sgrp`
-
-Arquivos:
-
-- `database/schema.sql`: estrutura completa.
-- `database/seeds.sql`: perfis, usuários demo, salas, itens, período, curso e disciplina.
-- `database/create_demo_users.php`: gera um novo hash para a senha demo, se necessário.
-
-No terminal do XAMPP, prefira importar com charset explícito:
+No XAMPP:
 
 ```powershell
 C:\xampp\mysql\bin\mysql.exe --default-character-set=utf8mb4 -u root -e "source C:/xampp/htdocs/sgrp/database/schema.sql"
 C:\xampp\mysql\bin\mysql.exe --default-character-set=utf8mb4 -u root -e "source C:/xampp/htdocs/sgrp/database/seeds.sql"
 ```
 
-## Usuários demo
+Em Linux:
 
-Senha padrão para todos: `12345678`
+```bash
+mysql --default-character-set=utf8mb4 -u sgrp_user -p sgrp < database/schema.sql
+mysql --default-character-set=utf8mb4 -u sgrp_user -p sgrp < database/seeds.sql
+```
 
-- `desenvolvedor@sgrp.local`
-- `administrativo@sgrp.local`
-- `secretario@sgrp.local`
-- `portaria@sgrp.local`
-- `professor@sgrp.local`
-- `bolsista@sgrp.local`
-- `aluno@sgrp.local`
-- `visitante@sgrp.local`
-- `servicos@sgrp.local`
+## Banco de Dados
 
-## UTF-8
+Banco padrão: `sgrp`
 
-Todos os arquivos foram criados em UTF-8. O banco usa `utf8mb4_unicode_ci`, o `index.php` envia `Content-Type: text/html; charset=UTF-8` e as páginas declaram `<meta charset="UTF-8">`.
+Arquivos:
+
+- `database/schema.sql`: estrutura completa do banco.
+- `database/seeds.sql`: perfis do sistema, configuração inicial e um único usuário Desenvolvedor.
+- `database/mysql.sql`: estrutura completa junto com o seed mínimo.
+
+## Usuário Inicial
+
+O banco inicial cria somente um usuário Desenvolvedor.
+
+- E-mail: `desenvolvedor@sgrp.local`
+- Senha provisória: `Sgrp@2026!Trocar`
+
+Troque a senha imediatamente após o primeiro acesso.
+
+## Segurança
+
+- Não versionar `.env`.
+- Não versionar uploads, logs, sessões, backups ou dumps reais.
+- Todos os formulários POST usam CSRF.
+- Consultas usam PDO com prepared statements.
+- A sessão autenticada é protegida contra reaproveitamento indevido.
 
 ## Observações
 
 - As URLs usam `baseUrl()` dinâmica e não fixam `localhost`.
-- O layout autenticado usa top bar horizontal, sem menu lateral.
-- Todos os formulários POST incluem CSRF.
-- Consultas usam PDO com prepared statements para entrada do usuário.
+- O layout autenticado usa top bar horizontal.
 - Cards e menus são renderizados conforme o perfil autenticado.
