@@ -10,6 +10,7 @@ use App\Models\Disciplina;
 use App\Models\ItemPortaria;
 use App\Models\PeriodoAcademico;
 use App\Models\PermissaoSala;
+use App\Models\Reserva;
 use App\Models\ReservaAula;
 use App\Models\Sala;
 use App\Models\User;
@@ -19,7 +20,37 @@ class SecretarioController extends Controller
 {
     public function index(): void { requireProfile('Secretário de Curso'); $this->view('secretario/index', ['title' => 'Secretário']); }
     public function disponibilidade(): void { requireProfile('Secretário de Curso'); $this->view('secretario/disponibilidade-salas', ['title' => 'Disponibilidade', 'salas' => (new Sala())->listDisponibilidade($_GET)]); }
-    public function reservasCurso(): void { requireProfile('Secretário de Curso'); $this->view('secretario/reservas-curso', ['title' => 'Reservas do Curso']); }
+    public function reservasCurso(): void
+    {
+        requireProfile('Secretário de Curso');
+        $this->view('secretario/reservas-curso', [
+            'title' => 'Reservas do Curso',
+            'reservas' => (new Reserva())->withDetails(),
+            'salas' => (new Sala())->all('nome'),
+        ]);
+    }
+
+    public function salvarReservaCurso(): void
+    {
+        requireProfile('Secretário de Curso');
+        verifyCsrf();
+        $this->validarReservaCurso();
+
+        (new Reserva())->create([
+            'usuario_id' => currentUser()['id'],
+            'sala_id' => (int) $_POST['sala_id'],
+            'titulo' => trim((string) $_POST['titulo']),
+            'finalidade' => $_POST['finalidade'] ?? null,
+            'tipo_reserva' => 'sala',
+            'inicio_em' => $_POST['inicio_em'],
+            'fim_em' => $_POST['fim_em'],
+            'situacao' => 'pendente',
+        ]);
+
+        audit('Reservas', 'criacao', 'Reserva do curso solicitada.');
+        flash('success', 'Reserva solicitada. Aguarde a aprovação da Portaria.');
+        redirect('/secretario/reservas-curso');
+    }
 
     public function periodos(): void { requireProfile('Secretário de Curso'); $this->view('secretario/periodos-academicos', ['title' => 'Períodos', 'periodos' => (new PeriodoAcademico())->all('data_inicio DESC')]); }
     public function salvarPeriodo(): void { requireProfile('Secretário de Curso'); verifyCsrf(); $this->validarPeriodo(); (new PeriodoAcademico())->create($this->periodoData()); flash('success', 'Período salvo.'); redirect('/secretario/periodos-academicos'); }
@@ -185,6 +216,59 @@ class SecretarioController extends Controller
             flash('error', 'A expiração não pode ser anterior ao início da autorização.');
             redirect('/secretario/chaves-autorizadas');
         }
+    }
+
+    private function validarReservaCurso(): void
+    {
+        $inicio = $this->criarDataHora((string) ($_POST['inicio_em'] ?? ''));
+        $fim = $this->criarDataHora((string) ($_POST['fim_em'] ?? ''));
+        $salaId = (int) ($_POST['sala_id'] ?? 0);
+
+        if (!$inicio || !$fim || $salaId <= 0) {
+            flash('error', 'Informe sala, data e horário válidos para solicitar a reserva.');
+            redirect('/secretario/reservas-curso');
+        }
+        if ($inicio < new \DateTimeImmutable()) {
+            flash('error', 'Não é possível reservar sala com data ou horário anterior ao momento atual.');
+            redirect('/secretario/reservas-curso');
+        }
+        if ($fim <= $inicio) {
+            flash('error', 'O fim da reserva precisa ser posterior ao início.');
+            redirect('/secretario/reservas-curso');
+        }
+        if (!$this->salaDisponivelParaReserva($salaId, $inicio, $fim)) {
+            flash('error', 'Esta sala não está disponível no período informado.');
+            redirect('/secretario/reservas-curso');
+        }
+    }
+
+    private function salaDisponivelParaReserva(int $salaId, \DateTimeImmutable $inicio, \DateTimeImmutable $fim): bool
+    {
+        $pdo = Database::pdo();
+        $stmt = $pdo->prepare('SELECT situacao FROM salas WHERE id = ? LIMIT 1');
+        $stmt->execute([$salaId]);
+        $situacao = $stmt->fetchColumn();
+        if (!in_array($situacao, ['disponivel', 'fechada'], true)) {
+            return false;
+        }
+
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM movimentacoes WHERE sala_id = ? AND situacao = "aberta"');
+        $stmt->execute([$salaId]);
+        if ((int) $stmt->fetchColumn() > 0) {
+            return false;
+        }
+
+        $stmt = $pdo->prepare(
+            'SELECT COUNT(*) FROM reservas
+             WHERE sala_id = ? AND situacao IN ("pendente", "confirmada")
+               AND inicio_em < ? AND fim_em > ?'
+        );
+        $stmt->execute([
+            $salaId,
+            $fim->format('Y-m-d H:i:s'),
+            $inicio->format('Y-m-d H:i:s'),
+        ]);
+        return (int) $stmt->fetchColumn() === 0;
     }
 
     private function criarData(string $valor): ?\DateTimeImmutable

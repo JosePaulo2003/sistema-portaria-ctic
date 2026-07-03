@@ -87,6 +87,7 @@ $router->post('/secretario/reservas-aulas/atualizar', [SecretarioController::cla
 $router->post('/secretario/reservas-aulas/status', [SecretarioController::class, 'atualizarReservaAula']);
 $router->post('/secretario/reservas-aulas/excluir', [SecretarioController::class, 'excluirReservaAula']);
 $router->get('/secretario/reservas-curso', [SecretarioController::class, 'reservasCurso']);
+$router->post('/secretario/reservas-curso', [SecretarioController::class, 'salvarReservaCurso']);
 $router->get('/secretario/disponibilidade-salas', [SecretarioController::class, 'disponibilidade']);
 $router->get('/secretario/salas', [SecretarioController::class, 'salas']);
 $router->post('/secretario/salas', [SecretarioController::class, 'salvarSala']);

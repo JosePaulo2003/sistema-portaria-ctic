@@ -27,6 +27,7 @@ $nav = [
         ['Períodos', '/secretario/periodos-academicos'],
         ['Matérias', '/secretario/materias'],
         ['Bolsistas', '/secretario/bolsistas'],
+        ['Reservas', '/secretario/reservas-curso'],
         ['Aulas', '/secretario/reservas-aulas'],
         ['Salas', '/secretario/salas'],
         ['Chaves', '/secretario/chaves-autorizadas'],
