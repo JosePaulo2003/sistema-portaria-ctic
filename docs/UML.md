@@ -1,6 +1,6 @@
 # UML - Sistema de Portaria CTIC
 
-Os diagramas foram separados para abrir com mais facilidade no GitHub.
+Os diagramas foram separados para melhor visualização e organização.
 
 - [Casos de uso](uml/casos-de-uso.md)
 - [Arquitetura MVC](uml/arquitetura-mvc.md)
