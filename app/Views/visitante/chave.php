@@ -1,6 +1,6 @@
 <section class="section-header">
     <h1>Chave Autorizada</h1>
-    <p>As chaves aparecem apenas quando estão disponíveis e autorizadas.</p>
+    <p>A lista mostra as chaves autorizadas e a situacao atual de cada uma.</p>
 </section>
 
 <?php

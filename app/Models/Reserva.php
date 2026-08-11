@@ -13,18 +13,63 @@ class Reserva extends Model
     public function withDetails(): array
     {
         return $this->db()->query(
-            'SELECT r.*, u.nome AS usuario_nome, s.nome AS sala_nome
+            'SELECT r.*, COALESCE(NULLIF(r.solicitante_nome_manual, ""), u.nome) AS usuario_nome, u.nome AS usuario_cadastrado_nome, s.nome AS sala_nome
              FROM reservas r
              JOIN usuarios u ON u.id = r.usuario_id
              LEFT JOIN salas s ON s.id = r.sala_id
-             ORDER BY r.inicio_em DESC, r.id DESC'
+             ORDER BY
+                CASE WHEN r.fim_em >= NOW() THEN 0 ELSE 1 END,
+                CASE WHEN r.fim_em >= NOW() THEN r.inicio_em END ASC,
+                CASE WHEN r.fim_em < NOW() THEN r.inicio_em END DESC,
+                r.id ASC'
         )->fetchAll();
+    }
+
+    public function byUserWithDetails(int $userId): array
+    {
+        $stmt = $this->db()->prepare(
+            'SELECT r.*, COALESCE(NULLIF(r.solicitante_nome_manual, ""), u.nome) AS usuario_nome, u.nome AS usuario_cadastrado_nome, s.nome AS sala_nome
+             FROM reservas r
+             JOIN usuarios u ON u.id = r.usuario_id
+             LEFT JOIN salas s ON s.id = r.sala_id
+             WHERE r.usuario_id = ?
+             ORDER BY
+                CASE WHEN r.fim_em >= NOW() THEN 0 ELSE 1 END,
+                CASE WHEN r.fim_em >= NOW() THEN r.inicio_em END ASC,
+                CASE WHEN r.fim_em < NOW() THEN r.inicio_em END DESC,
+                r.id ASC'
+        );
+        $stmt->execute([$userId]);
+        return $stmt->fetchAll();
+    }
+
+    public function belongsToUser(int $reservaId, int $userId): bool
+    {
+        $stmt = $this->db()->prepare('SELECT COUNT(*) FROM reservas WHERE id = ? AND usuario_id = ?');
+        $stmt->execute([$reservaId, $userId]);
+        return (int) $stmt->fetchColumn() > 0;
+    }
+
+    public function hasConflict(int $salaId, string $inicio, string $fim, ?int $ignoreId = null): bool
+    {
+        $sql = 'SELECT COUNT(*) FROM reservas
+                WHERE sala_id = ?
+                  AND situacao IN ("pendente", "confirmada")
+                  AND inicio_em < ? AND fim_em > ?';
+        $params = [$salaId, $fim, $inicio];
+        if ($ignoreId !== null) {
+            $sql .= ' AND id <> ?';
+            $params[] = $ignoreId;
+        }
+        $stmt = $this->db()->prepare($sql);
+        $stmt->execute($params);
+        return (int) $stmt->fetchColumn() > 0;
     }
 
     public function pendentes(): array
     {
         return $this->db()->query(
-            'SELECT r.*, u.nome AS usuario_nome, s.nome AS sala_nome
+            'SELECT r.*, COALESCE(NULLIF(r.solicitante_nome_manual, ""), u.nome) AS usuario_nome, u.nome AS usuario_cadastrado_nome, s.nome AS sala_nome
              FROM reservas r
              JOIN usuarios u ON u.id = r.usuario_id
              LEFT JOIN salas s ON s.id = r.sala_id

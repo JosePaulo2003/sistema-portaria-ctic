@@ -24,6 +24,13 @@ class Database
             PDO::ATTR_EMULATE_PREPARES => false,
         ]);
         self::$pdo->exec('SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci');
+
+        $timeZone = (string) ($cfg['timezone'] ?? '-04:00');
+        if (!preg_match('/^[+-](0\d|1[0-4]):[0-5]\d$/', $timeZone)) {
+            $timeZone = '-04:00';
+        }
+        self::$pdo->exec('SET time_zone = ' . self::$pdo->quote($timeZone));
+
         return self::$pdo;
     }
 }

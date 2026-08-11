@@ -1,6 +1,8 @@
+<?php $actionPrefix = $actionPrefix ?? '/secretario/itens'; ?>
+
 <section class="section-header"><h1>Itens da Portaria</h1></section>
 
-<form method="post" class="card form-grid">
+<form method="post" action="<?= e(baseUrl($actionPrefix)) ?>" class="card form-grid">
     <?= csrfField() ?>
     <label>Nome<input name="nome" required></label>
     <label>Código<input name="codigo"></label>
@@ -15,7 +17,7 @@
     <table><thead><tr><th>Item</th><th>Ações</th></tr></thead><tbody>
     <?php foreach ($itens as $i): ?>
         <tr><td colspan="2">
-            <form method="post" action="<?= e(baseUrl('/secretario/itens/atualizar')) ?>" class="inline-form row-edit-form row-edit-form--item">
+            <form method="post" action="<?= e(baseUrl($actionPrefix . '/atualizar')) ?>" class="inline-form row-edit-form row-edit-form--item">
                 <?= csrfField() ?><input type="hidden" name="id" value="<?= e($i['id']) ?>">
                 <label>Nome<input name="nome" required value="<?= e($i['nome']) ?>"></label>
                 <label>Código<input name="codigo" value="<?= e($i['codigo']) ?>"></label>
@@ -25,7 +27,7 @@
                 <label>Descrição<input name="descricao" value="<?= e($i['descricao']) ?>"></label>
                 <button class="button">Salvar</button>
             </form>
-            <form method="post" action="<?= e(baseUrl('/secretario/itens/excluir')) ?>" class="inline-actions">
+            <form method="post" action="<?= e(baseUrl($actionPrefix . '/excluir')) ?>" class="inline-actions">
                 <?= csrfField() ?><input type="hidden" name="id" value="<?= e($i['id']) ?>">
                 <button class="button button--danger" data-confirm="Excluir item? Se houver vínculo, ele será marcado como indisponível.">Excluir</button>
             </form>

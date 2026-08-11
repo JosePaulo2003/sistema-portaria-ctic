@@ -1,6 +1,13 @@
 <section class="section-header">
     <h1>Solicitações de usuários</h1>
-    <a class="button button--secondary" href="<?= e(baseUrl('/desenvolvedor/usuarios')) ?>">Voltar</a>
+    <div class="solicitacoes-toolbar">
+        <button class="button button--secondary" type="button" data-generate-all-passwords>Gerar senhas pendentes</button>
+        <form method="post" action="<?= e(baseUrl('/desenvolvedor/usuarios/solicitacoes/limpar-analisadas')) ?>">
+            <?= csrfField() ?>
+            <button class="button button--secondary" type="submit" data-confirm="Remover todas as solicitações aprovadas e recusadas desta lista? As pendentes serão mantidas.">Limpar analisadas</button>
+        </form>
+        <a class="button button--secondary" href="<?= e(baseUrl('/desenvolvedor/usuarios')) ?>">Voltar</a>
+    </div>
 </section>
 
 <div class="card table-wrap">
@@ -29,7 +36,8 @@
                     <td><span class="status-badge"><?= e($solicitacao['situacao']) ?></span></td>
                     <td>
                         <?php if ($solicitacao['situacao'] === 'pendente'): ?>
-                            <form method="post" action="<?= e(baseUrl('/desenvolvedor/usuarios/solicitacoes/aprovar')) ?>" class="inline-form row-edit-form">
+                            <div class="solicitacao-actions">
+                            <form method="post" action="<?= e(baseUrl('/desenvolvedor/usuarios/solicitacoes/aprovar')) ?>" class="solicitacao-approval-form">
                                 <?= csrfField() ?>
                                 <input type="hidden" name="id" value="<?= e($solicitacao['id']) ?>">
                                 <label>Nome<input name="nome" value="<?= e($solicitacao['nome']) ?>" required></label>
@@ -49,14 +57,23 @@
                                         <option value="pendente">pendente</option>
                                     </select>
                                 </label>
-                                <label>Senha inicial<input type="password" name="senha" placeholder="Informe a senha inicial" required></label>
-                                <button class="button" type="submit">Aprovar e criar</button>
+                                <label class="solicitacao-password-field">Senha inicial
+                                    <span class="password-generator">
+                                        <input type="text" name="senha" placeholder="Informe ou gere a senha inicial" required data-generated-password>
+                                        <button class="button button--secondary" type="button" data-generate-password>Gerar</button>
+                                        <button class="button button--secondary" type="button" data-copy-password>Copiar</button>
+                                    </span>
+                                </label>
+                                <div class="solicitacao-submit-actions">
+                                    <button class="button" type="submit">Aprovar e criar</button>
+                                </div>
                             </form>
-                            <form method="post" action="<?= e(baseUrl('/desenvolvedor/usuarios/solicitacoes/recusar')) ?>" class="inline-actions">
+                            <form method="post" action="<?= e(baseUrl('/desenvolvedor/usuarios/solicitacoes/recusar')) ?>" class="solicitacao-reject-form">
                                 <?= csrfField() ?>
                                 <input type="hidden" name="id" value="<?= e($solicitacao['id']) ?>">
                                 <button class="button button--danger" type="submit" data-confirm="Recusar esta solicitação?">Recusar</button>
                             </form>
+                            </div>
                         <?php else: ?>
                             <span class="muted">Já analisada</span>
                         <?php endif; ?>

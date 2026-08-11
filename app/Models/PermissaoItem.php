@@ -18,7 +18,13 @@ class PermissaoItem extends Model
              JOIN usuarios u ON u.id = p.usuario_id
              LEFT JOIN itens_portaria i ON i.id = p.item_portaria_id
              JOIN usuarios a ON a.id = p.autorizado_por
-             ORDER BY p.criado_em DESC, p.id DESC'
+             ORDER BY
+                p.inicio_autorizacao IS NULL,
+                p.inicio_autorizacao DESC,
+                p.expira_em IS NULL,
+                p.expira_em DESC,
+                p.criado_em DESC,
+                p.id DESC'
         )->fetchAll();
     }
 }

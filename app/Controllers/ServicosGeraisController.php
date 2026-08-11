@@ -7,17 +7,18 @@ use App\Core\Controller;
 use App\Models\ItemPortaria;
 use App\Models\Sala;
 
-// Serviços Gerais pode retirar qualquer chave disponível e itens da portaria.
+// ServiÃ§os Gerais pode retirar qualquer chave disponÃ­vel e itens da portaria.
 class ServicosGeraisController extends Controller
 {
-    public function index(): void { requireProfile('Serviços Gerais'); $this->view('servicos-gerais/index', ['title' => 'Serviços Gerais']); }
+    public function index(): void { $this->salasHome('ServiÃ§os Gerais'); }
     public function retiradas(): void
     {
-        requireProfile('Serviços Gerais');
+        requireProfile('ServiÃ§os Gerais');
         $this->view('servicos-gerais/retiradas', [
             'title' => 'Retiradas',
-            'salas' => (new Sala())->chavesDisponiveisParaRetirada(currentUser()),
+            'salas' => (new Sala())->chavesParaRetirada(currentUser()),
             'itens' => (new ItemPortaria())->disponiveisParaRetirada(),
         ]);
     }
 }
+

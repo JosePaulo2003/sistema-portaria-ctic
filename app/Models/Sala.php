@@ -5,7 +5,7 @@ namespace App\Models;
 
 use App\Core\Model;
 
-// Salas e ambientes, incluindo regras de disponibilidade pública e retirada de chave.
+// Salas e ambientes, incluindo disponibilidade publica e retirada de chave.
 class Sala extends Model
 {
     protected string $table = 'salas';
@@ -44,24 +44,70 @@ class Sala extends Model
 
     public function chavesDisponiveisParaRetirada(?array $user = null): array
     {
-        $salas = $this->listDisponibilidade(['status' => 'Fechada']);
-        $perfil = $user['perfil_nome'] ?? '';
-        if (!$user || isDeveloper() || in_array($perfil, ['Serviços Gerais', 'Administrativo', 'Diretor'], true)) {
-            return $perfil === 'Diretor' ? $this->priorizarDiretoria($salas) : $salas;
+        return array_values(array_filter(
+            $this->chavesParaRetirada($user),
+            fn (array $sala): bool => !empty($sala['chave_retiravel'])
+        ));
+    }
+
+    public function chavesParaRetirada(?array $user = null): array
+    {
+        $salas = $this->listDisponibilidade();
+        $perfil = (string) ($user['perfil_nome'] ?? '');
+
+        if ($user && !$this->perfilPodeVerTodasAsChaves($perfil)) {
+            $salas = array_values(array_filter($salas, fn (array $s): bool => $this->usuarioAutorizadoParaChave((int) $s['id'], $user)));
         }
-        $salas = array_values(array_filter($salas, fn (array $s): bool => $this->chavePodeSerRetirada((int) $s['id'], $user)));
-        return $perfil === 'Diretor' ? $this->priorizarDiretoria($salas) : $salas;
+
+        foreach ($salas as &$sala) {
+            $retiravel = ($sala['status_consulta_publica'] ?? '') === 'Fechada';
+            $sala['chave_retiravel'] = $retiravel;
+            $sala['chave_status'] = $retiravel ? 'disponivel' : 'indisponivel';
+            $sala['chave_status_label'] = $retiravel ? 'disponivel' : 'indisponivel';
+            $sala['chave_motivo'] = $retiravel ? 'Chave disponivel para retirada.' : ($sala['motivo_status'] ?? 'Chave indisponivel no momento.');
+        }
+        unset($sala);
+
+        return comparableProfile($perfil) === comparableProfile('Diretor') ? $this->priorizarDiretoria($salas) : $salas;
     }
 
     public function chavePodeSerRetirada(int $salaId, ?array $user): bool
     {
+        return $this->usuarioAutorizadoParaChave($salaId, $user) && $this->salaDisponivelParaRetirada($salaId);
+    }
+
+    private function usuarioAutorizadoParaChave(int $salaId, ?array $user): bool
+    {
         if (!$user) {
             return false;
         }
-        if (isDeveloper() || in_array($user['perfil_nome'] ?? '', ['Serviços Gerais', 'Agente de Portaria', 'Administrativo', 'Diretor'], true)) {
+        if ($this->perfilPodeVerTodasAsChaves((string) ($user['perfil_nome'] ?? ''))) {
             return true;
         }
         return (new PermissaoSala())->usuarioTemAcesso((int) $user['id'], $salaId);
+    }
+
+    private function perfilPodeVerTodasAsChaves(string $perfil): bool
+    {
+        $normalizado = comparableProfile($perfil);
+        $perfis = array_map(fn (string $item): string => comparableProfile($item), [
+            'Desenvolvedor',
+            'Serviços Gerais',
+            'Agente de Portaria',
+            'Administrativo',
+            'Diretor',
+        ]);
+        return in_array($normalizado, $perfis, true);
+    }
+
+    private function salaDisponivelParaRetirada(int $salaId): bool
+    {
+        $sala = $this->find($salaId);
+        if (!$sala) {
+            return false;
+        }
+        [$status] = $this->statusPublico($salaId, $sala, date('Y-m-d H:i:s'));
+        return $status === 'Fechada';
     }
 
     private function priorizarDiretoria(array $salas): array
@@ -88,11 +134,15 @@ class Sala extends Model
     public function reservasDaSala(int $salaId): array
     {
         $stmt = $this->db()->prepare(
-            'SELECT r.*, u.nome AS usuario_nome
+            'SELECT r.*, COALESCE(NULLIF(r.solicitante_nome_manual, ""), u.nome) AS usuario_nome, u.nome AS usuario_cadastrado_nome
              FROM reservas r
              JOIN usuarios u ON u.id = r.usuario_id
              WHERE r.sala_id = ?
-             ORDER BY r.inicio_em DESC'
+             ORDER BY
+                CASE WHEN r.fim_em >= NOW() THEN 0 ELSE 1 END,
+                CASE WHEN r.fim_em >= NOW() THEN r.inicio_em END ASC,
+                CASE WHEN r.fim_em < NOW() THEN r.inicio_em END DESC,
+                r.id ASC'
         );
         $stmt->execute([$salaId]);
         return $stmt->fetchAll();

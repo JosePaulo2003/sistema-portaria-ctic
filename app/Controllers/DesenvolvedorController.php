@@ -8,20 +8,24 @@ use App\Models\AdvertenciaChave;
 use App\Models\BloqueioChave;
 use App\Models\ConfiguracaoSistema;
 use App\Models\LogAuditoria;
+use App\Models\LogSistema;
 
 // Painel técnico do desenvolvedor, com acesso amplo a manutenção e auditoria.
 class DesenvolvedorController extends Controller
 {
     public function index(): void
     {
-        requireProfile('Desenvolvedor');
-        $this->view('desenvolvedor/index', ['title' => 'Desenvolvedor']);
+        $this->salasHome('Desenvolvedor');
     }
 
     public function logs(): void
     {
         requireProfile('Desenvolvedor');
-        $this->view('desenvolvedor/logs', ['title' => 'Logs', 'logs' => (new LogAuditoria())->withUser()]);
+        $this->view('desenvolvedor/logs', [
+            'title' => 'Logs',
+            'logs' => (new LogAuditoria())->withUser(),
+            'systemLogs' => (new LogSistema())->withUser(),
+        ]);
     }
 
     public function limparLogs(): void

@@ -7,8 +7,8 @@
 
 <div class="dashboard-grid">
     <a class="card card-link" href="<?= e(baseUrl('/diretor/chaves')) ?>">
-        <h2>Chaves disponíveis</h2>
-        <p>Retirar chaves disponíveis, com a Diretoria no topo da lista.</p>
+        <h2>Chaves</h2>
+        <p>Retirar chaves e acompanhar a situacao atual, com a Diretoria no topo.</p>
     </a>
     <a class="card card-link" href="<?= e(baseUrl('/diretor/reservas')) ?>">
         <h2>Reservas</h2>

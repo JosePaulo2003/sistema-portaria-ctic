@@ -17,6 +17,35 @@ class AuthController extends Controller
         $this->view('auth/login', ['title' => 'Entrar'], 'auth');
     }
 
+    public function forgotForm(): void
+    {
+        if (currentUser()) {
+            redirect(moduleForProfile(userProfile() ?? ''));
+        }
+        $this->view('auth/forgot', ['title' => 'Recuperar senha'], 'auth');
+    }
+
+    public function forgot(): void
+    {
+        verifyCsrf();
+        $email = trim((string) ($_POST['email'] ?? ''));
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            flash('error', 'Informe um e-mail valido.');
+            redirect('/recuperar-senha');
+        }
+
+        $user = (new User())->findByEmail($email);
+        systemLog('warning', 'Auth', 'Solicitacao de recuperacao de senha.', [
+            'email' => $email,
+            'usuario_id_solicitado' => $user['id'] ?? null,
+            'perfil' => $user['perfil_nome'] ?? null,
+            'situacao' => $user['situacao'] ?? null,
+        ]);
+
+        flash('success', 'Solicitacao registrada. Procure o CTIC/CESIT para validar sua identidade e receber a redefinicao.');
+        redirect('/login');
+    }
+
     public function login(): void
     {
         verifyCsrf();

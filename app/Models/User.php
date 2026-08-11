@@ -14,9 +14,10 @@ class User extends Model
     public function allWithProfile(): array
     {
         return $this->db()->query(
-            'SELECT u.*, p.nome AS perfil_nome
+            'SELECT u.*, p.nome AS perfil_nome, c.nome AS curso_nome
              FROM usuarios u
              JOIN perfis p ON p.id = u.perfil_id
+             LEFT JOIN cursos c ON c.id = u.curso_id
              ORDER BY u.nome'
         )->fetchAll();
     }
@@ -24,9 +25,10 @@ class User extends Model
     public function findWithProfile(int $id): ?array
     {
         $stmt = $this->db()->prepare(
-            'SELECT u.*, p.nome AS perfil_nome
+            'SELECT u.*, p.nome AS perfil_nome, c.nome AS curso_nome
              FROM usuarios u
              JOIN perfis p ON p.id = u.perfil_id
+             LEFT JOIN cursos c ON c.id = u.curso_id
              WHERE u.id = ? LIMIT 1'
         );
         $stmt->execute([$id]);
@@ -61,6 +63,57 @@ class User extends Model
         return $stmt->fetchAll();
     }
 
+    public function professoresAtivos(): array
+    {
+        $stmt = $this->db()->query(
+            "SELECT u.*, p.nome AS perfil_nome
+             FROM usuarios u
+             JOIN perfis p ON p.id = u.perfil_id
+             WHERE p.nome = 'Professor' AND u.situacao = 'ativo'
+             ORDER BY u.nome"
+        );
+        return $stmt->fetchAll();
+    }
+
+    public function bolsistasComProfessor(): array
+    {
+        $stmt = $this->db()->query(
+            "SELECT u.*, p.nome AS perfil_nome, prof.nome AS professor_nome
+             FROM usuarios u
+             JOIN perfis p ON p.id = u.perfil_id
+             LEFT JOIN usuarios prof ON prof.id = u.professor_indicador_id
+             WHERE p.nome IN ('Aluno Bolsista', 'Estagiario', 'Estagiário')
+             ORDER BY u.nome"
+        );
+        return $stmt->fetchAll();
+    }
+
+    public function byProfileForProfessor(string $profile, int $professorId): array
+    {
+        $stmt = $this->db()->prepare(
+            'SELECT u.*, p.nome AS perfil_nome, prof.nome AS professor_nome
+             FROM usuarios u
+             JOIN perfis p ON p.id = u.perfil_id
+             LEFT JOIN usuarios prof ON prof.id = u.professor_indicador_id
+             WHERE p.nome = ? AND u.professor_indicador_id = ?
+             ORDER BY u.nome'
+        );
+        $stmt->execute([$profile, $professorId]);
+        return $stmt->fetchAll();
+    }
+
+    public function belongsToProfessor(int $userId, int $professorId, string $profile = 'Aluno Bolsista'): bool
+    {
+        $stmt = $this->db()->prepare(
+            'SELECT COUNT(*)
+             FROM usuarios u
+             JOIN perfis p ON p.id = u.perfil_id
+             WHERE u.id = ? AND u.professor_indicador_id = ? AND p.nome = ?'
+        );
+        $stmt->execute([$userId, $professorId, $profile]);
+        return (int) $stmt->fetchColumn() > 0;
+    }
+
     public function touchLogin(int $id): void
     {
         $stmt = $this->db()->prepare('UPDATE usuarios SET ultimo_login_em = NOW() WHERE id = ?');
@@ -86,6 +139,7 @@ class User extends Model
             'foto_perfil_url' => null,
             'professor_indicador_id' => null,
             'projeto_pesquisa' => null,
+            'curso_id' => null,
         ]);
     }
 }

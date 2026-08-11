@@ -12,5 +12,6 @@
         <?= $content ?>
     </main>
     <footer class="site-footer">© CTIC-CESIT. Todos os direitos reservados.</footer>
+    <script src="<?= e(assetUrl('js/app.js')) ?>"></script>
 </body>
 </html>

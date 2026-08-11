@@ -8,24 +8,12 @@ use App\Models\Movimentacao;
 use App\Models\Reserva;
 use App\Models\Sala;
 
-// Painel de acompanhamento da direção: chaves, reservas e fluxo da portaria.
+// Painel de acompanhamento da direÃ§Ã£o: chaves, reservas e fluxo da portaria.
 class DiretorController extends Controller
 {
     public function index(): void
     {
-        requireProfile('Diretor');
-
-        $movimentacao = new Movimentacao();
-        $abertas = $movimentacao->abertas();
-
-        $this->view('diretor/index', [
-            'title' => 'Direção',
-            'abertas' => $abertas,
-            'reservas' => (new Reserva())->withDetails(),
-            'movimentacoes' => $movimentacao->historico(20),
-            'chavesAbertas' => count(array_filter($abertas, fn (array $m): bool => !empty($m['sala_id']))),
-            'itensAbertos' => count(array_filter($abertas, fn (array $m): bool => !empty($m['item_portaria_id']))),
-        ]);
+        $this->salasHome('Diretor');
     }
 
     public function chaves(): void
@@ -34,7 +22,7 @@ class DiretorController extends Controller
 
         $this->view('diretor/chaves', [
             'title' => 'Chaves',
-            'salas' => (new Sala())->chavesDisponiveisParaRetirada(currentUser()),
+            'salas' => (new Sala())->chavesParaRetirada(currentUser()),
         ]);
     }
 
@@ -48,12 +36,43 @@ class DiretorController extends Controller
         ]);
     }
 
+    public function atualizarReservaStatus(): void
+    {
+        requireProfile('Diretor');
+        verifyCsrf();
+
+        $status = (string) ($_POST['situacao'] ?? '');
+        if (!in_array($status, ['pendente', 'confirmada', 'cancelada', 'encerrada'], true)) {
+            flash('error', 'Status de reserva invalido.');
+            redirect('/diretor/reservas');
+        }
+
+        $reservaModel = new Reserva();
+        $reserva = $reservaModel->find((int) ($_POST['id'] ?? 0));
+        if (!$reserva) {
+            flash('error', 'Reserva nao encontrada.');
+            redirect('/diretor/reservas');
+        }
+        if ($status === 'confirmada' && !$reservaModel->podeAprovar($reserva)) {
+            flash('error', 'Nao foi possivel confirmar: existe conflito ou a sala nao esta disponivel.');
+            redirect('/diretor/reservas');
+        }
+
+        $reservaModel->update((int) $reserva['id'], ['situacao' => $status]);
+        audit('Direcao', 'atualizacao_status_reserva', 'Status de reserva atualizado pela direcao.', [
+            'reserva_id' => $reserva['id'],
+            'situacao' => $status,
+        ]);
+        flash('success', 'Status da reserva atualizado.');
+        redirect('/diretor/reservas');
+    }
+
     public function movimentacoes(): void
     {
         requireProfile('Diretor');
 
         $this->view('diretor/movimentacoes', [
-            'title' => 'Movimentações',
+            'title' => 'MovimentaÃ§Ãµes',
             'movimentacoes' => (new Movimentacao())->historico(200),
         ]);
     }
@@ -68,3 +87,4 @@ class DiretorController extends Controller
         ]);
     }
 }
+

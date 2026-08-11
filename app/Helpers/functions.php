@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 use App\Core\Database;
 use App\Models\LogAuditoria;
+use App\Models\LogSistema;
 
 // Funcoes globais de apoio para URL, seguranca, sessao, autorizacao e auditoria.
 function config(string $key, mixed $default = null): mixed
@@ -29,7 +30,15 @@ function baseUrl(string $path = ''): string
 
 function assetUrl(string $path): string
 {
-    return baseUrl('public/' . ltrim($path, '/'));
+    $assetPath = ltrim($path, '/');
+    $url = baseUrl('public/' . $assetPath);
+    $file = dirname(__DIR__, 2) . '/public/' . str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $assetPath);
+
+    if (is_file($file)) {
+        $url .= '?v=' . filemtime($file);
+    }
+
+    return $url;
 }
 
 function redirect(string $path): never
@@ -40,7 +49,32 @@ function redirect(string $path): never
 
 function e(mixed $value): string
 {
-    return htmlspecialchars((string) $value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    return htmlspecialchars(fixMojibakeText((string) $value), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+}
+
+function fixMojibakeText(string $text): string
+{
+    if ($text === '' || (!str_contains($text, 'Ã') && !str_contains($text, 'Â'))) {
+        return $text;
+    }
+
+    $current = $text;
+    for ($i = 0; $i < 2; $i++) {
+        $converted = @mb_convert_encoding($current, 'ISO-8859-1', 'UTF-8');
+        if (!is_string($converted) || $converted === '' || !mb_check_encoding($converted, 'UTF-8')) {
+            break;
+        }
+        if ($converted === $current) {
+            break;
+        }
+
+        $current = $converted;
+        if (!str_contains($current, 'Ã') && !str_contains($current, 'Â')) {
+            break;
+        }
+    }
+
+    return $current;
 }
 
 function csrfToken(): string
@@ -65,6 +99,24 @@ function verifyCsrf(): void
     }
 }
 
+function notificationHtml(string $type, string $title, string $message, bool $autoDismiss = true): string
+{
+    $notificationType = preg_replace('/[^a-z0-9_-]+/', '', mb_strtolower($type)) ?: 'info';
+    $text = trim($title . ': ' . $message);
+
+    return '<span hidden data-browser-alert data-browser-alert-type="' . e($notificationType) . '" data-browser-alert-message="' . e($text) . '"></span>';
+}
+
+function notificationStackHtml(string $notifications): string
+{
+    return $notifications;
+}
+
+function appTimestamp(): string
+{
+    return date('Y-m-d H:i:s');
+}
+
 function flash(?string $key = null, ?string $message = null): string
 {
     if ($key !== null && $message !== null) {
@@ -74,11 +126,17 @@ function flash(?string $key = null, ?string $message = null): string
     if ($key === null) {
         $messages = $_SESSION['_flash'] ?? [];
         unset($_SESSION['_flash']);
-        $html = '';
+        $notifications = '';
         foreach ($messages as $type => $text) {
-            $html .= '<div class="flash flash--' . e($type) . '">' . e($text) . '</div>';
+            $notificationType = preg_replace('/[^a-z0-9_-]+/', '', mb_strtolower((string) $type)) ?: 'info';
+            $title = match ($notificationType) {
+                'error' => 'Atenção',
+                'success' => 'Alteração realizada',
+                default => 'Aviso',
+            };
+            $notifications .= notificationHtml($notificationType, $title, (string) $text);
         }
-        return $html;
+        return notificationStackHtml($notifications);
     }
     $text = $_SESSION['_flash'][$key] ?? '';
     unset($_SESSION['_flash'][$key]);
@@ -153,7 +211,42 @@ function userProfile(): ?string
 
 function isProfile(string|array $profiles): bool
 {
-    return in_array(userProfile(), (array) $profiles, true);
+    $current = userProfile();
+    $requested = (array) $profiles;
+    $currentComparable = comparableProfile((string) $current);
+    $requestedComparable = array_map(fn (string $profile): string => comparableProfile($profile), $requested);
+
+    if ($currentComparable !== '' && str_contains($currentComparable, 'estagi') && in_array(comparableProfile('Aluno Bolsista'), $requestedComparable, true)) {
+        return true;
+    }
+    return in_array($currentComparable, $requestedComparable, true);
+}
+
+function comparableProfile(string $profile): string
+{
+    $profile = fixMojibakeText($profile);
+    $profile = strtr($profile, [
+        'Ã¡' => 'a', 'Ãà' => 'a', 'Ã£' => 'a', 'Ã¢' => 'a',
+        'Ã©' => 'e', 'Ãª' => 'e',
+        'Ã­' => 'i',
+        'Ã³' => 'o', 'Ãµ' => 'o', 'Ã´' => 'o',
+        'Ãº' => 'u',
+        'Ã§' => 'c',
+        'á' => 'a', 'à' => 'a', 'ã' => 'a', 'â' => 'a',
+        'é' => 'e', 'ê' => 'e',
+        'í' => 'i',
+        'ó' => 'o', 'õ' => 'o', 'ô' => 'o',
+        'ú' => 'u',
+        'ç' => 'c',
+        'Á' => 'a', 'À' => 'a', 'Ã' => 'a', 'Â' => 'a',
+        'É' => 'e', 'Ê' => 'e',
+        'Í' => 'i',
+        'Ó' => 'o', 'Õ' => 'o', 'Ô' => 'o',
+        'Ú' => 'u',
+        'Ç' => 'c',
+    ]);
+    $profile = mb_strtolower($profile);
+    return preg_replace('/[^a-z0-9 ]+/', '', $profile) ?? '';
 }
 
 function isDeveloper(): bool
@@ -179,12 +272,19 @@ function requireProfile(string|array $profiles): void
 
 function moduleForProfile(string $profile): string
 {
+    $profile = fixMojibakeText($profile);
     $normalizado = mb_strtolower($profile);
     if (str_contains($normalizado, 'secret')) {
         return '/secretario';
     }
+    if (str_contains($normalizado, 'coordenador')) {
+        return '/coordenador';
+    }
     if (str_contains($normalizado, 'servi') && str_contains($normalizado, 'gerais')) {
         return '/servicos-gerais';
+    }
+    if (str_contains($normalizado, 'estagi')) {
+        return '/bolsista';
     }
 
     return match ($profile) {
@@ -196,6 +296,7 @@ function moduleForProfile(string $profile): string
         'Professor' => '/professor',
         'Aluno Bolsista' => '/bolsista',
         'Aluno' => '/aluno',
+        'Motorista' => '/motorista',
         'Visitante' => '/visitante',
         'Serviços Gerais' => '/servicos-gerais',
         default => '/login',
@@ -213,8 +314,32 @@ function audit(string $modulo, string $acao, string $descricao, array $context =
             'contexto_json' => $context ? json_encode($context, JSON_UNESCAPED_UNICODE) : null,
             'ip_origem' => $_SERVER['REMOTE_ADDR'] ?? null,
             'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? null,
+            'criado_em' => appTimestamp(),
         ]);
     } catch (Throwable) {
         // A auditoria nunca deve impedir a operação principal do usuário.
     }
+}
+
+function systemLog(string $nivel, string $origem, string $mensagem, array $context = []): void
+{
+    try {
+        (new LogSistema())->registrar($nivel, $origem, $mensagem, $context + [
+            'ip_origem' => $_SERVER['REMOTE_ADDR'] ?? null,
+            'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? null,
+        ]);
+    } catch (Throwable) {
+        // Falha de log tecnico nao deve derrubar a operacao principal.
+    }
+}
+
+function logCriticalThrowable(Throwable $exception, string $origem = 'HTTP'): void
+{
+    systemLog('critical', $origem, $exception->getMessage(), [
+        'arquivo' => $exception->getFile(),
+        'linha' => $exception->getLine(),
+        'rota' => $_SERVER['REQUEST_URI'] ?? null,
+        'metodo' => $_SERVER['REQUEST_METHOD'] ?? null,
+        'trace' => substr($exception->getTraceAsString(), 0, 4000),
+    ]);
 }

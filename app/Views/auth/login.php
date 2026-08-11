@@ -11,4 +11,5 @@
         </label>
         <button class="button" type="submit">Entrar</button>
     </form>
+    <p class="auth-link"><a href="<?= e(baseUrl('/recuperar-senha')) ?>">Esqueci minha senha</a></p>
 </section>

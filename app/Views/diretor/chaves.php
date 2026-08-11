@@ -1,6 +1,6 @@
 <section class="section-header">
-    <h1>Chaves disponíveis</h1>
-    <p>A sala da Diretoria aparece primeiro quando estiver disponível.</p>
+    <h1>Chaves</h1>
+    <p>A lista mostra a situacao atual das chaves, com a Diretoria no topo.</p>
 </section>
 
 <?php

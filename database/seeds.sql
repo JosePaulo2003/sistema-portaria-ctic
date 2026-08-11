@@ -8,7 +8,10 @@ INSERT INTO perfis (nome, nivel) VALUES
 ('Agente de Portaria', 60),
 ('Professor', 50),
 ('Aluno Bolsista', 40),
+('Coordenador de Curso', 75),
+('Estagiario', 35),
 ('Serviços Gerais', 30),
+('Motorista', 25),
 ('Aluno', 20),
 ('Visitante', 10);
 

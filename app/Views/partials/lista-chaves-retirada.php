@@ -2,10 +2,10 @@
     <table>
         <thead>
             <tr>
-                <th>Chave disponível</th>
-                <th>Localização</th>
+                <th>Chave</th>
+                <th>Localizacao</th>
                 <th>Retirada</th>
-                <th>Situação</th>
+                <th>Situacao</th>
             </tr>
         </thead>
         <tbody>
@@ -17,21 +17,29 @@
                             <br><span class="muted"><?= e($s['codigo']) ?></span>
                         <?php endif; ?>
                     </td>
-                    <td><?= e(trim(($s['bloco'] ?? '') . ' ' . ($s['tipo_ambiente'] ?? '')) ?: 'Não informado') ?></td>
+                    <td><?= e(trim(($s['bloco'] ?? '') . ' ' . ($s['tipo_ambiente'] ?? '')) ?: 'Nao informado') ?></td>
                     <td>
-                        <form method="post" action="<?= e($retiradaAction) ?>" class="inline-form withdrawal-row">
-                            <?= csrfField() ?>
-                            <input type="hidden" name="sala_id" value="<?= e($s['id']) ?>">
-                            <input type="text" name="observacao" placeholder="<?= e($observacaoPlaceholder ?? 'Opcional') ?>">
-                            <input type="password" name="senha_confirmacao" placeholder="Confirme sua senha" required autocomplete="current-password">
-                            <button class="button" type="submit">Retirar chave</button>
-                        </form>
+                        <?php if (!empty($s['chave_retiravel'])): ?>
+                            <form method="post" action="<?= e($retiradaAction) ?>" class="inline-form withdrawal-row">
+                                <?= csrfField() ?>
+                                <input type="hidden" name="sala_id" value="<?= e($s['id']) ?>">
+                                <input type="text" name="observacao" placeholder="<?= e($observacaoPlaceholder ?? 'Opcional') ?>">
+                                <input type="password" name="senha_confirmacao" placeholder="Confirme sua senha" required autocomplete="current-password">
+                                <button class="button" type="submit">Retirar chave</button>
+                            </form>
+                        <?php else: ?>
+                            <span class="muted"><?= e($s['chave_motivo'] ?? 'Chave indisponivel no momento.') ?></span>
+                        <?php endif; ?>
                     </td>
-                    <td><span class="status-badge">disponível</span></td>
+                    <td>
+                        <span class="status-badge status-<?= e($s['chave_status'] ?? 'disponivel') ?>">
+                            <?= e($s['chave_status_label'] ?? 'disponivel') ?>
+                        </span>
+                    </td>
                 </tr>
             <?php endforeach; ?>
             <?php if (!$salas): ?>
-                <tr><td colspan="4">Nenhuma chave disponível para retirada no momento.</td></tr>
+                <tr><td colspan="4">Nenhuma chave encontrada para retirada no momento.</td></tr>
             <?php endif; ?>
         </tbody>
     </table>

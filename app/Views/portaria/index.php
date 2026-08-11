@@ -8,6 +8,7 @@
     <article class="card"><h2>Chaves pendentes</h2><strong><?= count(array_filter($abertas, fn ($m) => $m['sala_id'])) ?></strong></article>
     <article class="card"><h2>Itens pendentes</h2><strong><?= count(array_filter($abertas, fn ($m) => $m['item_portaria_id'])) ?></strong></article>
     <a class="card card-link" href="<?= e(baseUrl('/portaria/permissoes')) ?>"><h2>Permissões ativas</h2><p>Consultar permissões de retirada.</p></a>
+    <a class="card card-link" href="<?= e(baseUrl('/portaria/vinculos-bolsistas')) ?>"><h2>Vinculos</h2><p>Linkar bolsistas e estagiarios a professores.</p></a>
 </div>
 
 <details class="accordion" open>

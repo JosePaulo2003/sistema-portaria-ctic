@@ -1,10 +1,10 @@
 <section class="section-header">
     <h1>Retirada de Chaves e Itens</h1>
-    <p>Serviços Gerais tem acesso aos recursos disponíveis para apoio operacional.</p>
+    <p>Servicos Gerais tem acesso aos recursos para apoio operacional e acompanha a situacao atual.</p>
 </section>
 
 <section class="resource-section">
-    <h2>Chaves disponíveis</h2>
+    <h2>Chaves</h2>
     <?php
     $retiradaAction = baseUrl('/servicos-gerais/retiradas/chave');
     $observacaoPlaceholder = 'Limpeza, manutenção ou apoio operacional';

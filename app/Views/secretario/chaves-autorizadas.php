@@ -1,8 +1,10 @@
 <?php $diasSemana = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo']; ?>
 
+<?php $actionPrefix = $actionPrefix ?? '/secretario/chaves-autorizadas'; ?>
+
 <section class="section-header"><h1>Chaves Autorizadas</h1></section>
 
-<form method="post" class="card form-grid">
+<form method="post" action="<?= e(baseUrl($actionPrefix)) ?>" class="card form-grid">
     <?= csrfField() ?>
     <label>Usuário
         <select name="usuario_id">
@@ -76,7 +78,7 @@
                 ?>
                 <tr>
                     <td colspan="6">
-                        <form method="post" action="<?= e(baseUrl('/secretario/chaves-autorizadas/atualizar')) ?>" class="permission-edit-form">
+                        <form method="post" action="<?= e(baseUrl($actionPrefix . '/atualizar')) ?>" class="permission-edit-form">
                             <?= csrfField() ?>
                             <input type="hidden" name="id" value="<?= e($p['id']) ?>">
                             <label>Usuário
@@ -143,7 +145,7 @@
                                 <button class="button" type="submit">Salvar</button>
                             </div>
                         </form>
-                        <form method="post" action="<?= e(baseUrl('/secretario/chaves-autorizadas/revogar')) ?>" class="inline-actions">
+                        <form method="post" action="<?= e(baseUrl($actionPrefix . '/revogar')) ?>" class="inline-actions">
                             <?= csrfField() ?>
                             <input type="hidden" name="id" value="<?= e($p['id']) ?>">
                             <button class="button button--danger" data-confirm="Excluir esta permissão de chave?" type="submit">Excluir</button>

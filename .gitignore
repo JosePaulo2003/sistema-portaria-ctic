@@ -34,3 +34,9 @@ Desktop.ini
 *.tmp
 *.temp
 *.log
+
+# Dumps locais com dados reais
+/sgrp-database-*.sql
+
+# Cópias locais de segurança
+/storage/backups/
