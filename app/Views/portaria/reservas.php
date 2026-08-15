@@ -17,7 +17,7 @@ $diasSemanaReserva = [
 ?>
 
 <form method="post" action="<?= e(baseUrl('/portaria/reservas')) ?>" class="card form-grid">
-    <?= csrfField() ?>
+    <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
     <label>Sala
         <select name="sala_id" required>
             <option value="">Selecione</option>
@@ -98,7 +98,7 @@ $diasSemanaReserva = [
                     <td>
                         <?php if (($reserva['situacao'] ?? '') === 'pendente'): ?>
                             <form method="post" action="<?= e(baseUrl('/portaria/reservas/atualizar')) ?>" class="inline-actions">
-                                <?= csrfField() ?>
+                                <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
                                 <input type="hidden" name="id" value="<?= e($reserva['id']) ?>">
                                 <button class="button" name="acao" value="aprovar" type="submit">Aprovar</button>
                                 <button class="button button--danger" name="acao" value="recusar" type="submit" data-confirm="Recusar esta reserva?">Recusar</button>
@@ -108,7 +108,7 @@ $diasSemanaReserva = [
                         <?php endif; ?>
                         <?php if ($podeApagarReserva): ?>
                             <form method="post" action="<?= e(baseUrl('/portaria/reservas/excluir-historico')) ?>" class="inline-actions">
-                                <?= csrfField() ?>
+                                <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
                                 <input type="hidden" name="id" value="<?= e($reserva['id']) ?>">
                                 <button class="button button--danger" type="submit" data-confirm="Apagar este historico de reserva?">Apagar</button>
                             </form>

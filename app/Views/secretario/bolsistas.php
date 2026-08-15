@@ -1,7 +1,7 @@
 <section class="section-header"><h1>Bolsistas</h1></section>
 
 <form method="post" class="card form-grid">
-    <?= csrfField() ?>
+    <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
     <label>Nome<input name="nome" required></label>
     <label>E-mail<input type="email" name="email" required></label>
     <label>Senha<input type="password" name="senha" placeholder="Informe a senha inicial" required></label>
@@ -40,7 +40,7 @@
                 <tr>
                     <td colspan="5">
                         <form method="post" action="<?= e(baseUrl('/secretario/bolsistas/atualizar')) ?>" class="inline-form row-edit-form row-edit-form--bolsista">
-                            <?= csrfField() ?>
+                            <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
                             <input type="hidden" name="id" value="<?= e($b['id']) ?>">
                             <label>Nome
                                 <input name="nome" required value="<?= e($b['nome']) ?>">
@@ -76,7 +76,7 @@
                             <button class="button" type="submit">Salvar</button>
                         </form>
                         <form method="post" action="<?= e(baseUrl('/secretario/bolsistas/excluir')) ?>" class="inline-actions">
-                            <?= csrfField() ?>
+                            <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
                             <input type="hidden" name="id" value="<?= e($b['id']) ?>">
                             <button class="button button--danger" data-confirm="Apagar este bolsista? Se houver histórico, ele será removido do acesso e anonimizado." type="submit">Apagar</button>
                         </form>

@@ -1,6 +1,6 @@
 <section class="section-header"><h1>Cadastrar usuario</h1></section>
 <form method="post" class="card form-grid">
-    <?= csrfField() ?>
+    <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
     <label>Nome<input name="nome" required></label>
     <label>E-mail<input type="email" name="email" required></label>
     <label>Senha<input type="password" name="senha" minlength="8" required></label>

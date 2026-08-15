@@ -23,7 +23,7 @@
                             <a class="button button--secondary" href="<?= e(baseUrl('/usuarios/editar?id=' . $usuario['id'])) ?>">Editar</a>
                             <?php if ((int) $usuario['id'] !== (int) currentUser()['id']): ?>
                                 <form method="post" action="<?= e(baseUrl('/usuarios/excluir')) ?>">
-                                    <?= csrfField() ?>
+                                    <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
                                     <input type="hidden" name="id" value="<?= e($usuario['id']) ?>">
                                     <button class="button button--danger" data-confirm="Apagar este usuario? Essa acao remove o acesso imediatamente." type="submit">Apagar</button>
                                 </form>

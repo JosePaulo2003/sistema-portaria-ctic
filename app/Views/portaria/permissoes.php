@@ -29,7 +29,7 @@ $expiracaoAutorizacaoPadrao = $inicioAutorizacaoPadrao->modify('+1 hour');
 <section class="card form-card permissions-card">
     <h2>Adicionar permissao de chave</h2>
     <form method="post" action="<?= e(baseUrl('/portaria/permissoes/chaves')) ?>" class="permissions-form">
-        <?= csrfField() ?>
+        <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
         <label class="permission-user-field">
             Usuario
             <select name="usuario_id" required>
@@ -140,7 +140,7 @@ $expiracaoAutorizacaoPadrao = $inicioAutorizacaoPadrao->modify('+1 hour');
     <section class="card form-card permissions-card" id="editar-permissao">
         <h2>Editar permissão de <?= e($permissaoEdicao['usuario_nome']) ?></h2>
         <form method="post" action="<?= e(baseUrl('/portaria/permissoes/chaves/atualizar')) ?>" class="permissions-form">
-            <?= csrfField() ?>
+            <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
             <input type="hidden" name="id" value="<?= e($permissaoEdicao['id']) ?>">
             <label class="permission-user-field">Usuário
                 <input type="text" value="<?= e($permissaoEdicao['usuario_nome']) ?>" readonly>
@@ -269,7 +269,7 @@ $expiracaoAutorizacaoPadrao = $inicioAutorizacaoPadrao->modify('+1 hour');
                             <a class="button button--secondary" href="<?= e(baseUrl('/portaria/permissoes?usuario_id=' . (int) $p['usuario_id'] . '&editar_id=' . (int) $p['id'] . '#editar-permissao')) ?>">Editar</a>
                             <?php if (($p['situacao'] ?? '') === 'ativa'): ?>
                                 <form method="post" action="<?= e(baseUrl('/portaria/permissoes/chaves/revogar')) ?>" class="inline-form">
-                                    <?= csrfField() ?>
+                                    <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
                                     <input type="hidden" name="id" value="<?= e($p['id']) ?>">
                                     <button class="button permission-revoke-button" type="submit" data-confirm="Revogar e remover esta permissão da lista?">Revogar</button>
                                 </form>

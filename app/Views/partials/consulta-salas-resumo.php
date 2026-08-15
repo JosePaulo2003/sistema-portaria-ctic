@@ -106,7 +106,7 @@ $fimSolicitacaoValor = $fimSolicitacao->format('Y-m-d\TH:i');
                 <a class="button button--secondary room-card__link" href="<?= e(baseUrl('/salas/detalhes?id=' . $sala['id'])) ?>">Ver sala</a>
                 <?php if ($podeSolicitarSala && ($sala['status_consulta_publica'] ?? '') === 'Fechada'): ?>
                     <form method="post" action="<?= e(baseUrl('/professor/reservas-salas')) ?>" class="room-card__request">
-                        <?= csrfField() ?>
+                        <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
                         <input type="hidden" name="sala_id" value="<?= e($sala['id']) ?>">
                         <input type="hidden" name="titulo" value="<?= e('Solicitação de sala - ' . $sala['nome']) ?>">
                         <input type="hidden" name="inicio_em" value="<?= e($inicioSolicitacaoValor) ?>">

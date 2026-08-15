@@ -339,7 +339,7 @@ $navIcon = static function (string $icon, string $class = 'nav-icon') use ($icon
             <button class="button button--secondary guide-start-button" type="button" data-guide-start title="Ajuda e tutoriais do SGRP"><?= $navIcon('help', 'button__icon') ?><span>Ajuda</span></button>
             <a class="button button--secondary" href="<?= e(baseUrl('/perfil')) ?>" data-guide-profile><?= $navIcon('user', 'button__icon') ?><span>Meu Perfil</span></a>
             <form method="post" action="<?= e(baseUrl('/logout')) ?>">
-                <?= csrfField() ?>
+                <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
                 <button class="button" type="submit"><?= $navIcon('log-out', 'button__icon') ?><span>Sair</span></button>
             </form>
             <img class="topbar__logo topbar__logo--uea" src="<?= e(assetUrl('assets/uea_logo_white.png')) ?>" alt="UEA">

@@ -3,7 +3,7 @@
 <section class="section-header"><h1>Itens da Portaria</h1></section>
 
 <form method="post" action="<?= e(baseUrl($actionPrefix)) ?>" class="card form-grid">
-    <?= csrfField() ?>
+    <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
     <label>Nome<input name="nome" required></label>
     <label>Código<input name="codigo"></label>
     <label>Categoria<input name="categoria"></label>
@@ -18,7 +18,7 @@
     <?php foreach ($itens as $i): ?>
         <tr><td colspan="2">
             <form method="post" action="<?= e(baseUrl($actionPrefix . '/atualizar')) ?>" class="inline-form row-edit-form row-edit-form--item">
-                <?= csrfField() ?><input type="hidden" name="id" value="<?= e($i['id']) ?>">
+                <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token><input type="hidden" name="id" value="<?= e($i['id']) ?>">
                 <label>Nome<input name="nome" required value="<?= e($i['nome']) ?>"></label>
                 <label>Código<input name="codigo" value="<?= e($i['codigo']) ?>"></label>
                 <label>Categoria<input name="categoria" value="<?= e($i['categoria']) ?>"></label>
@@ -28,7 +28,7 @@
                 <button class="button">Salvar</button>
             </form>
             <form method="post" action="<?= e(baseUrl($actionPrefix . '/excluir')) ?>" class="inline-actions">
-                <?= csrfField() ?><input type="hidden" name="id" value="<?= e($i['id']) ?>">
+                <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token><input type="hidden" name="id" value="<?= e($i['id']) ?>">
                 <button class="button button--danger" data-confirm="Excluir item? Se houver vínculo, ele será marcado como indisponível.">Excluir</button>
             </form>
         </td></tr>

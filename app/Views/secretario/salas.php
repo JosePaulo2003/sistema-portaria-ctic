@@ -3,7 +3,7 @@
 <section class="section-header"><h1>Salas</h1></section>
 
 <form method="post" action="<?= e(baseUrl($actionPrefix)) ?>" class="card form-grid">
-    <?= csrfField() ?>
+    <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
     <label>Nome<input name="nome" required></label>
     <label>Código<input name="codigo"></label>
     <label>Bloco<input name="bloco"></label>
@@ -19,7 +19,7 @@
     <?php foreach ($salas as $s): ?>
         <tr><td colspan="2">
             <form method="post" action="<?= e(baseUrl($actionPrefix . '/atualizar')) ?>" class="inline-form row-edit-form row-edit-form--sala">
-                <?= csrfField() ?>
+                <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
                 <input type="hidden" name="id" value="<?= e($s['id']) ?>">
                 <label>Nome<input name="nome" required value="<?= e($s['nome']) ?>"></label>
                 <label>Código<input name="codigo" value="<?= e($s['codigo']) ?>"></label>
@@ -31,7 +31,7 @@
                 <button class="button">Salvar</button>
             </form>
             <form method="post" action="<?= e(baseUrl($actionPrefix . '/excluir')) ?>" class="inline-actions">
-                <?= csrfField() ?><input type="hidden" name="id" value="<?= e($s['id']) ?>">
+                <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token><input type="hidden" name="id" value="<?= e($s['id']) ?>">
                 <button class="button button--danger" data-confirm="Excluir sala? Se houver vínculo, ela será bloqueada.">Excluir</button>
             </form>
         </td></tr>

@@ -27,7 +27,7 @@
                     <td><span class="status-badge"><?= e($reserva['situacao'] ?? '-') ?></span></td>
                     <td>
                         <form method="post" action="<?= e(baseUrl('/diretor/reservas/status')) ?>" class="inline-form">
-                            <?= csrfField() ?>
+                            <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
                             <input type="hidden" name="id" value="<?= e($reserva['id']) ?>">
                             <label class="sr-only">Status</label>
                             <select name="situacao">

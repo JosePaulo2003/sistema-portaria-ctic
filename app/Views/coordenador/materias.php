@@ -14,7 +14,7 @@
     </article>
 <?php else: ?>
     <form method="post" action="<?= e(baseUrl('/coordenador/materias')) ?>" class="card form-grid">
-        <?= csrfField() ?>
+        <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
         <label>Disciplina
             <input name="nome" required placeholder="Ex.: Programacao Web">
         </label>
@@ -59,7 +59,7 @@
                     <tr>
                         <td colspan="5">
                             <form method="post" action="<?= e(baseUrl('/coordenador/materias/disciplina/atualizar')) ?>" class="inline-form row-edit-form row-edit-form--wide">
-                                <?= csrfField() ?>
+                                <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
                                 <input type="hidden" name="id" value="<?= e($disciplina['id']) ?>">
                                 <input name="nome" required value="<?= e($disciplina['nome']) ?>" aria-label="Nome da materia">
                                 <input name="periodo_referencia" required value="<?= e($disciplina['periodo_referencia']) ?>" aria-label="Periodo">
@@ -79,7 +79,7 @@
                                 <button class="button" type="submit">Salvar</button>
                             </form>
                             <form method="post" action="<?= e(baseUrl('/coordenador/materias/disciplina/excluir')) ?>" class="inline-actions">
-                                <?= csrfField() ?>
+                                <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
                                 <input type="hidden" name="id" value="<?= e($disciplina['id']) ?>">
                                 <button class="button button--danger" data-confirm="Excluir esta materia? Se houver vinculo, ela sera inativada." type="submit">Excluir</button>
                             </form>
