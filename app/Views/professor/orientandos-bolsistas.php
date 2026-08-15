@@ -5,7 +5,7 @@
 </section>
 
 <form method="post" class="card form-grid">
-    <?= csrfField() ?>
+    <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
     <label>Nome
         <input name="nome" required>
     </label>
@@ -29,7 +29,7 @@
 
 <?php if ($bolsistas): ?>
     <form method="post" action="<?= e(baseUrl('/professor/orientandos-bolsistas/liberar-chave')) ?>" class="card form-grid">
-        <?= csrfField() ?>
+        <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
         <label>Bolsista
             <select name="usuario_id" required>
                 <?php foreach ($bolsistas as $b): ?>
@@ -88,7 +88,7 @@
                 <tr>
                     <td colspan="4">
                         <form method="post" action="<?= e(baseUrl('/professor/orientandos-bolsistas/atualizar')) ?>" class="inline-form row-edit-form row-edit-form--orientando">
-                            <?= csrfField() ?>
+                            <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
                             <input type="hidden" name="id" value="<?= e($b['id']) ?>">
                             <label>Nome
                                 <input name="nome" required value="<?= e($b['nome']) ?>">
@@ -112,7 +112,7 @@
                             <button class="button">Salvar</button>
                         </form>
                         <form method="post" action="<?= e(baseUrl('/professor/orientandos-bolsistas/excluir')) ?>" class="inline-actions">
-                            <?= csrfField() ?>
+                            <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
                             <input type="hidden" name="id" value="<?= e($b['id']) ?>">
                             <button class="button button--danger" data-confirm="Apagar orientando? Se houver historico, ele sera anonimizado.">Apagar</button>
                         </form>

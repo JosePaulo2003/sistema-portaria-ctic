@@ -4,7 +4,7 @@
 </section>
 
 <form method="post" action="<?= e(baseUrl('/portaria/retiradas/registrar-chave')) ?>" class="card form-grid">
-    <?= csrfField() ?>
+    <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
     <label>Usuario que retirou
         <select name="usuario_id" required>
             <option value="">Selecione</option>
@@ -53,7 +53,7 @@
                     <td><?= e(formatDateTimeBr($m['retirada_em'] ?? null)) ?></td>
                     <td>
                         <form method="post" action="<?= e(baseUrl($m['sala_id'] ? '/portaria/retiradas/devolver-chave' : '/portaria/retiradas/devolver-item')) ?>" class="inline-form">
-                            <?= csrfField() ?>
+                            <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
                             <input type="hidden" name="movimentacao_id" value="<?= e($m['id']) ?>">
                             <select name="devolvido_por_usuario_id">
                                 <option value="<?= e($m['usuario_id']) ?>">Mesma pessoa</option>

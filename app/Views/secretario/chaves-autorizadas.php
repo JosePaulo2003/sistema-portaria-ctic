@@ -5,7 +5,7 @@
 <section class="section-header"><h1>Chaves Autorizadas</h1></section>
 
 <form method="post" action="<?= e(baseUrl($actionPrefix)) ?>" class="card form-grid">
-    <?= csrfField() ?>
+    <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
     <label>Usuário
         <select name="usuario_id">
             <?php foreach ($usuarios as $u): ?>
@@ -79,7 +79,7 @@
                 <tr>
                     <td colspan="6">
                         <form method="post" action="<?= e(baseUrl($actionPrefix . '/atualizar')) ?>" class="permission-edit-form">
-                            <?= csrfField() ?>
+                            <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
                             <input type="hidden" name="id" value="<?= e($p['id']) ?>">
                             <label>Usuário
                                 <select name="usuario_id">
@@ -149,7 +149,7 @@
                             </div>
                         </form>
                         <form method="post" action="<?= e(baseUrl($actionPrefix . '/revogar')) ?>" class="inline-actions">
-                            <?= csrfField() ?>
+                            <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
                             <input type="hidden" name="id" value="<?= e($p['id']) ?>">
                             <button class="button button--danger" data-confirm="Excluir esta permissão de chave?" type="submit">Excluir</button>
                         </form>

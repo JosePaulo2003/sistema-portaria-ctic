@@ -21,7 +21,7 @@
                     <td>
                         <?php if (!empty($s['chave_retiravel'])): ?>
                             <form method="post" action="<?= e($retiradaAction) ?>" class="inline-form withdrawal-row">
-                                <?= csrfField() ?>
+                                <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
                                 <input type="hidden" name="sala_id" value="<?= e($s['id']) ?>">
                                 <input type="text" name="observacao" placeholder="<?= e($observacaoPlaceholder ?? 'Opcional') ?>">
                                 <input type="password" name="senha_confirmacao" placeholder="Confirme sua senha" required autocomplete="current-password">

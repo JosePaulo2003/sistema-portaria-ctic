@@ -2,7 +2,7 @@
     <h1>SGRP</h1>
     <p>Sistema de Gestão de Recursos Pedagógicos</p>
     <form method="post" action="<?= e(baseUrl('/login')) ?>" class="stack" autocomplete="off">
-        <?= csrfField() ?>
+        <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
         <label>Nome ou e-mail
             <input type="text" name="identificador" required autofocus autocomplete="username" placeholder="Digite seu nome completo ou e-mail">
         </label>

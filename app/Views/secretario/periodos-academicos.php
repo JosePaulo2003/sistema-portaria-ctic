@@ -1,7 +1,7 @@
 <section class="section-header"><h1>Períodos Acadêmicos</h1></section>
 
 <form method="post" class="card form-grid">
-    <?= csrfField() ?>
+    <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
     <label>Nome<input name="nome" required></label>
     <label>Início<input type="date" name="data_inicio" required></label>
     <label>Fim<input type="date" name="data_fim" required></label>
@@ -16,7 +16,7 @@
     <?php foreach ($periodos as $p): ?>
         <tr><td colspan="2">
             <form method="post" action="<?= e(baseUrl('/secretario/periodos-academicos/atualizar')) ?>" class="inline-form row-edit-form row-edit-form--periodo">
-                <?= csrfField() ?>
+                <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
                 <input type="hidden" name="id" value="<?= e($p['id']) ?>">
                 <label>Nome<input name="nome" required value="<?= e($p['nome']) ?>"></label>
                 <label>Início<input type="date" name="data_inicio" required value="<?= e($p['data_inicio']) ?>"></label>
@@ -31,7 +31,7 @@
                 <button class="button">Salvar</button>
             </form>
             <form method="post" action="<?= e(baseUrl('/secretario/periodos-academicos/excluir')) ?>" class="inline-actions">
-                <?= csrfField() ?>
+                <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
                 <input type="hidden" name="id" value="<?= e($p['id']) ?>">
                 <button class="button button--danger" data-confirm="Excluir este período? Se houver vínculo, ele será inativado.">Excluir</button>
             </form>

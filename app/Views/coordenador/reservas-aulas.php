@@ -25,7 +25,7 @@ $diasSemana = ['Segunda-feira', 'Terca-feira', 'Quarta-feira', 'Quinta-feira', '
     </article>
 <?php else: ?>
     <form method="post" action="<?= e(baseUrl('/coordenador/reservas-aulas')) ?>" class="card form-grid">
-        <?= csrfField() ?>
+        <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
         <label>Materia
             <select name="disciplina_id" required>
                 <option value="">Selecione</option>
@@ -98,7 +98,7 @@ $diasSemana = ['Segunda-feira', 'Terca-feira', 'Quarta-feira', 'Quinta-feira', '
                     <tr>
                         <td colspan="9">
                             <form method="post" action="<?= e(baseUrl('/coordenador/reservas-aulas/atualizar')) ?>" class="inline-form row-edit-form row-edit-form--aula">
-                                <?= csrfField() ?>
+                                <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
                                 <input type="hidden" name="id" value="<?= e($reserva['id']) ?>">
                                 <label>Materia
                                     <select name="disciplina_id" required>
@@ -159,7 +159,7 @@ $diasSemana = ['Segunda-feira', 'Terca-feira', 'Quarta-feira', 'Quinta-feira', '
                                 <button class="button" type="submit">Salvar</button>
                             </form>
                             <form method="post" action="<?= e(baseUrl('/coordenador/reservas-aulas/excluir')) ?>" class="inline-actions">
-                                <?= csrfField() ?>
+                                <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
                                 <input type="hidden" name="id" value="<?= e($reserva['id']) ?>">
                                 <button class="button button--danger" data-confirm="Excluir esta reserva de aula?" type="submit">Excluir</button>
                             </form>

@@ -4,7 +4,7 @@
 </section>
 
 <form method="post" class="card form-grid">
-    <?= csrfField() ?>
+    <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
     <label>Sala
         <select name="sala_id" required>
             <?php foreach ($salas as $s): ?>

@@ -3,7 +3,7 @@
     <div class="solicitacoes-toolbar">
         <button class="button button--secondary" type="button" data-generate-all-passwords>Gerar senhas pendentes</button>
         <form method="post" action="<?= e(baseUrl('/desenvolvedor/usuarios/solicitacoes/limpar-analisadas')) ?>">
-            <?= csrfField() ?>
+            <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
             <button class="button button--secondary" type="submit" data-confirm="Remover todas as solicitações aprovadas e recusadas desta lista? As pendentes serão mantidas.">Limpar analisadas</button>
         </form>
         <a class="button button--secondary" href="<?= e(baseUrl('/desenvolvedor/usuarios')) ?>">Voltar</a>
@@ -38,7 +38,7 @@
                         <?php if ($solicitacao['situacao'] === 'pendente'): ?>
                             <div class="solicitacao-actions">
                             <form method="post" action="<?= e(baseUrl('/desenvolvedor/usuarios/solicitacoes/aprovar')) ?>" class="solicitacao-approval-form">
-                                <?= csrfField() ?>
+                                <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
                                 <input type="hidden" name="id" value="<?= e($solicitacao['id']) ?>">
                                 <label>Nome<input name="nome" value="<?= e($solicitacao['nome']) ?>" required></label>
                                 <label>E-mail<input type="email" name="email" value="<?= e($solicitacao['email']) ?>" required></label>
@@ -69,7 +69,7 @@
                                 </div>
                             </form>
                             <form method="post" action="<?= e(baseUrl('/desenvolvedor/usuarios/solicitacoes/recusar')) ?>" class="solicitacao-reject-form">
-                                <?= csrfField() ?>
+                                <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
                                 <input type="hidden" name="id" value="<?= e($solicitacao['id']) ?>">
                                 <button class="button button--danger" type="submit" data-confirm="Recusar esta solicitação?">Recusar</button>
                             </form>

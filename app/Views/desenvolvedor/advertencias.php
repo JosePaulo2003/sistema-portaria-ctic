@@ -1,7 +1,7 @@
 <section class="section-header"><h1>Advertências</h1></section>
 
 <form method="post" class="card form-grid">
-    <?= csrfField() ?>
+    <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
     <label>Dias de bloqueio após 3 advertências
         <input type="number" min="1" name="dias" value="<?= e($config) ?>">
     </label>
@@ -38,7 +38,7 @@
                     <td>
                         <div class="inline-actions">
                             <form method="post" action="<?= e(baseUrl('/desenvolvedor/bloqueios/atualizar')) ?>" class="inline-form">
-                                <?= csrfField() ?>
+                                <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
                                 <input type="hidden" name="id" value="<?= e($bloqueio['id']) ?>">
                                 <input type="hidden" name="acao" value="atualizar">
                                 <input type="datetime-local" name="fim_em" value="<?= e(date('Y-m-d\TH:i', strtotime($bloqueio['fim_em']))) ?>">
@@ -46,14 +46,14 @@
                             </form>
                             <?php if ($bloqueio['situacao'] === 'ativo'): ?>
                                 <form method="post" action="<?= e(baseUrl('/desenvolvedor/bloqueios/atualizar')) ?>">
-                                    <?= csrfField() ?>
+                                    <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
                                     <input type="hidden" name="id" value="<?= e($bloqueio['id']) ?>">
                                     <input type="hidden" name="acao" value="zerar">
                                     <button class="button button--secondary" data-confirm="Zerar este bloqueio e liberar o usuário agora?" type="submit">Zerar</button>
                                 </form>
                             <?php endif; ?>
                             <form method="post" action="<?= e(baseUrl('/desenvolvedor/bloqueios/excluir')) ?>">
-                                <?= csrfField() ?>
+                                <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
                                 <input type="hidden" name="id" value="<?= e($bloqueio['id']) ?>">
                                 <button class="button button--danger" data-confirm="Apagar este bloqueio da lista?" type="submit">Apagar</button>
                             </form>
@@ -71,7 +71,7 @@
 <section class="section-header">
     <h1>Histórico de advertências</h1>
     <form method="post" action="<?= e(baseUrl('/desenvolvedor/advertencias/limpar')) ?>" class="inline-actions">
-        <?= csrfField() ?>
+        <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
         <button class="button button--danger" data-confirm="Limpar todo o histórico de advertências? Os bloqueios existentes serão mantidos." type="submit">Limpar histórico</button>
     </form>
 </section>

@@ -2,7 +2,7 @@
     <h1>Recuperar senha</h1>
     <p>Informe seu e-mail institucional para registrar a solicitacao de recuperacao.</p>
     <form method="post" action="<?= e(baseUrl('/recuperar-senha')) ?>" class="stack" autocomplete="off">
-        <?= csrfField() ?>
+        <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
         <label>E-mail
             <input type="email" name="email" required autofocus autocomplete="off">
         </label>

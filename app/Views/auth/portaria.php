@@ -4,7 +4,7 @@
     <?php if (!empty($agenteSelecionado)): ?>
         <p>Agente selecionado: <strong><?= e($agenteSelecionado['nome']) ?></strong></p>
         <form method="post" action="<?= e(baseUrl('/login/portaria')) ?>" class="stack" autocomplete="off">
-            <?= csrfField() ?>
+            <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
             <input type="hidden" name="agente_id" value="<?= e($agenteSelecionado['id']) ?>">
             <label>Senha
                 <input type="password" name="senha" required autofocus autocomplete="current-password">

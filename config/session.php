@@ -20,7 +20,8 @@ ini_set('session.sid_bits_per_character', '6');
 ini_set('session.gc_maxlifetime', '31536000');
 ini_set('session.lazy_write', '1');
 
-$secureCookie = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+$sessionForwardedProto = strtolower(trim(explode(',', (string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? ''))[0] ?? ''));
+$secureCookie = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || $sessionForwardedProto === 'https';
 session_set_cookie_params([
     'lifetime' => 0,
     'path' => '/',

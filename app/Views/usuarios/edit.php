@@ -4,7 +4,7 @@
 </section>
 
 <form method="post" class="card form-grid">
-    <?= csrfField() ?>
+    <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
     <input type="hidden" name="id" value="<?= e($usuario['id']) ?>">
 
     <label>Nome

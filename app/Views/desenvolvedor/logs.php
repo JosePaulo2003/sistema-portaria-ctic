@@ -14,7 +14,7 @@
 </form>
 
 <form method="post" action="<?= e(baseUrl('/desenvolvedor/logs/limpar')) ?>" class="inline-actions">
-    <?= csrfField() ?>
+    <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
     <input type="hidden" name="modo" value="todos">
     <button class="button button--danger" data-confirm="Limpar todos os logs de auditoria?" type="submit">Limpar auditoria</button>
 </form>
