@@ -413,7 +413,7 @@ $navIcon = static function (string $icon, string $class = 'nav-icon') use ($icon
             </div>
         </section>
     </div>
-    <script type="application/json" data-guide-config><?= $guideConfigJson ?: '{}' ?></script>
+    <template data-guide-config><?= e($guideConfigJson ?: '{}') ?></template>
     <script src="<?= e(assetUrl('js/app.js')) ?>"></script>
     <script src="<?= e(assetUrl('js/guide.js')) ?>"></script>
 </body>

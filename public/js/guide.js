@@ -9,7 +9,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let config;
   try {
-    config = JSON.parse(configElement.textContent || '{}');
+    const configText = configElement instanceof HTMLTemplateElement
+      ? configElement.content.textContent
+      : configElement.textContent;
+    config = JSON.parse(configText || '{}');
   } catch (error) {
     return;
   }

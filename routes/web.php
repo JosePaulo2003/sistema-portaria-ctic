@@ -31,7 +31,7 @@ $router->post('/login/portaria', [AuthController::class, 'loginPortaria']);
 $router->get('/recuperar-senha', [AuthController::class, 'forgotForm']);
 $router->post('/recuperar-senha', [AuthController::class, 'forgot']);
 $router->post('/logout', [AuthController::class, 'logout']);
-$router->post('/integracoes/google-form/usuarios', [FormularioUsuarioController::class, 'receber']);
+$router->postWithoutCsrf('/integracoes/google-form/usuarios', [FormularioUsuarioController::class, 'receber']);
 $router->get('/perfil', [PerfilController::class, 'edit']);
 $router->post('/perfil', [PerfilController::class, 'update']);
 $router->get('/calendario-salas', [SalaController::class, 'calendario']);
