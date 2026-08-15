@@ -69,6 +69,14 @@ class SolicitacaoUsuario extends Model
         return $this->db()->query('SELECT * FROM solicitacoes_usuarios ORDER BY criado_em DESC LIMIT 100')->fetchAll();
     }
 
+    public function limparAnalisadas(): int
+    {
+        $this->ensureTable();
+        $stmt = $this->db()->prepare('DELETE FROM solicitacoes_usuarios WHERE situacao IN ("aprovada", "recusada")');
+        $stmt->execute();
+        return $stmt->rowCount();
+    }
+
     public function emailPendenteOuUsuarioExiste(string $email): bool
     {
         $this->ensureTable();

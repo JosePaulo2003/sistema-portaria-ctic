@@ -1,10 +1,10 @@
 <section class="section-header">
     <h1>Retiradas</h1>
-    <p>As chaves aparecem apenas quando estão disponíveis e autorizadas.</p>
+    <p>A lista mostra as chaves autorizadas e a situacao atual de cada uma.</p>
 </section>
 
 <section class="resource-section">
-    <h2>Chaves disponíveis</h2>
+    <h2>Chaves</h2>
     <?php
     $retiradaAction = baseUrl('/bolsista/retiradas/chave');
     $observacaoPlaceholder = 'Observação opcional';

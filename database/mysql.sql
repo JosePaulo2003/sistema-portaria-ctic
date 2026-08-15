@@ -40,14 +40,17 @@ CREATE TABLE usuarios (
   senha_hash VARCHAR(255) NOT NULL,
   perfil_id INT NOT NULL,
   situacao ENUM('ativo','pendente','inativo','bloqueado') NOT NULL DEFAULT 'pendente',
+  acesso_expira_em DATETIME NULL,
   foto_perfil_url VARCHAR(255) NULL,
   professor_indicador_id INT NULL,
   projeto_pesquisa VARCHAR(255) NULL,
+  curso_id INT NULL,
   criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   atualizado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   ultimo_login_em DATETIME NULL,
   CONSTRAINT fk_usuarios_perfil FOREIGN KEY (perfil_id) REFERENCES perfis(id),
-  CONSTRAINT fk_usuarios_professor FOREIGN KEY (professor_indicador_id) REFERENCES usuarios(id) ON DELETE SET NULL
+  CONSTRAINT fk_usuarios_professor FOREIGN KEY (professor_indicador_id) REFERENCES usuarios(id) ON DELETE SET NULL,
+  INDEX idx_usuarios_acesso_expira (acesso_expira_em)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE solicitacoes_usuarios (
@@ -116,11 +119,14 @@ CREATE TABLE disciplinas (
   CONSTRAINT fk_disciplinas_professor FOREIGN KEY (professor_id) REFERENCES usuarios(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+ALTER TABLE usuarios
+  ADD CONSTRAINT fk_usuarios_curso FOREIGN KEY (curso_id) REFERENCES cursos(id) ON DELETE SET NULL;
+
 CREATE TABLE reservas (
   id INT AUTO_INCREMENT PRIMARY KEY,
   usuario_id INT NOT NULL,
+  solicitante_nome_manual VARCHAR(180) NULL,
   sala_id INT NULL,
-  acesso_total TINYINT(1) NOT NULL DEFAULT 0,
   periodo_academico_id INT NULL,
   titulo VARCHAR(180) NOT NULL,
   finalidade TEXT NULL,
@@ -187,7 +193,8 @@ CREATE TABLE recursos_curso (
 CREATE TABLE permissoes_salas (
   id INT AUTO_INCREMENT PRIMARY KEY,
   usuario_id INT NOT NULL,
-  sala_id INT NOT NULL,
+  sala_id INT NULL,
+  acesso_total TINYINT(1) NOT NULL DEFAULT 0,
   autorizado_por INT NOT NULL,
   inicio_autorizacao DATETIME NULL,
   expira_em DATETIME NULL,
@@ -317,7 +324,10 @@ INSERT INTO perfis (nome, nivel) VALUES
 ('Agente de Portaria', 60),
 ('Professor', 50),
 ('Aluno Bolsista', 40),
+('Coordenador de Curso', 75),
+('Estagiario', 35),
 ('Serviços Gerais', 30),
+('Motorista', 25),
 ('Aluno', 20),
 ('Visitante', 10);
 

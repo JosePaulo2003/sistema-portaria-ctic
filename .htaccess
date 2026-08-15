@@ -1,22 +1,22 @@
-RewriteEngine On
-RewriteBase /sgrp/
+DirectoryIndex index.php
 
 Options -Indexes
-ServerSignature Off
 
-<IfModule mod_headers.c>
-    Header always setifempty X-Content-Type-Options "nosniff"
-    Header always setifempty Referrer-Policy "strict-origin-when-cross-origin"
-    Header always setifempty Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    RewriteRule (^|/)\. - [F,L]
+    RewriteRule ^(app|config|database|routes|scripts|storage|tmp)(/|$) - [F,L]
+    RewriteRule ^(README|LICENSE)(\.md)?$ - [F,L]
+    RewriteRule \.(env|example|sql|log|bak|backup|old|orig|ini|conf|json|lock|yml|yaml|sh|py|gs)$ - [F,L]
+
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    RewriteRule ^ index.php [L]
 </IfModule>
 
-<FilesMatch "^(\.env|\.git|composer\.(json|lock)|README\.md)$">
+<FilesMatch "^(\.env|\.git|\.gitignore|README\.md|LICENSE|composer\.(json|lock)|package(-lock)?\.json)$">
     Require all denied
 </FilesMatch>
-
-RewriteRule ^(app|config|database|routes|storage)(/|$) - [F,L,NC]
-RewriteRule ^public/uploads/.*\.(php|phtml|phar|cgi|pl|asp|aspx|jsp)$ - [F,L,NC]
-
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^ index.php [QSA,L]

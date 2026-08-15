@@ -92,7 +92,7 @@
                     <td><?= e($adv['usuario_nome']) ?></td>
                     <td><?= e($adv['agente_nome']) ?></td>
                     <td><?= e($adv['motivo']) ?></td>
-                    <td><?= e($adv['criado_em']) ?></td>
+                    <td><?= e(formatDateTimeBr($adv['criado_em'] ?? null)) ?></td>
                 </tr>
             <?php endforeach; ?>
             <?php if (!$advertencias): ?>

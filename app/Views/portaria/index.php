@@ -8,6 +8,9 @@
     <article class="card"><h2>Chaves pendentes</h2><strong><?= count(array_filter($abertas, fn ($m) => $m['sala_id'])) ?></strong></article>
     <article class="card"><h2>Itens pendentes</h2><strong><?= count(array_filter($abertas, fn ($m) => $m['item_portaria_id'])) ?></strong></article>
     <a class="card card-link" href="<?= e(baseUrl('/portaria/permissoes')) ?>"><h2>Permissões ativas</h2><p>Consultar permissões de retirada.</p></a>
+    <a class="card card-link" href="<?= e(baseUrl('/portaria/vinculos-bolsistas')) ?>"><h2>Vinculos</h2><p>Linkar bolsistas e estagiarios a professores.</p></a>
+    <a class="card card-link" href="<?= e(baseUrl('/portaria/salas')) ?>"><h2>Cadastro de salas</h2><p>Criar e manter os ambientes do sistema.</p></a>
+    <a class="card card-link" href="<?= e(baseUrl('/portaria/itens')) ?>"><h2>Cadastro de itens</h2><p>Criar e manter os itens controlados pela Portaria.</p></a>
 </div>
 
 <details class="accordion" open>

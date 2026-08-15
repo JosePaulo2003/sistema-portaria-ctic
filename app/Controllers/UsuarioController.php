@@ -4,24 +4,30 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Controller;
-use App\Core\Database;
+use App\Models\Curso;
 use App\Models\Perfil;
 use App\Models\SolicitacaoUsuario;
 use App\Models\User;
 
-// Cadastro e manutenção de usuários feita pelo desenvolvedor.
 class UsuarioController extends Controller
 {
     public function index(): void
     {
         requireProfile('Desenvolvedor');
-        $this->view('usuarios/index', ['title' => 'Usuários', 'usuarios' => (new User())->allWithProfile()]);
+        $this->view('usuarios/index', [
+            'title' => 'Usuarios',
+            'usuarios' => (new User())->allWithProfile(),
+        ]);
     }
 
     public function create(): void
     {
         requireProfile('Desenvolvedor');
-        $this->view('usuarios/create', ['title' => 'Novo usuário', 'perfis' => (new Perfil())->all('nivel DESC')]);
+        $this->view('usuarios/create', [
+            'title' => 'Novo usuario',
+            'perfis' => (new Perfil())->all('nivel DESC'),
+            'cursos' => (new Curso())->all('nome'),
+        ]);
     }
 
     public function store(): void
@@ -34,8 +40,9 @@ class UsuarioController extends Controller
             'senha_hash' => password_hash((string) $_POST['senha'], PASSWORD_DEFAULT),
             'perfil_id' => (int) $_POST['perfil_id'],
             'situacao' => $_POST['situacao'] ?? 'ativo',
+            'curso_id' => ($_POST['curso_id'] ?? '') ?: null,
         ]);
-        flash('success', 'Usuário criado.');
+        flash('success', 'Usuario criado.');
         redirect('/desenvolvedor/usuarios');
     }
 
@@ -43,9 +50,10 @@ class UsuarioController extends Controller
     {
         requireProfile('Desenvolvedor');
         $this->view('usuarios/edit', [
-            'title' => 'Editar usuário',
+            'title' => 'Editar usuario',
             'usuario' => (new User())->findWithProfile((int) $_GET['id']),
             'perfis' => (new Perfil())->all('nivel DESC'),
+            'cursos' => (new Curso())->all('nome'),
         ]);
     }
 
@@ -58,12 +66,13 @@ class UsuarioController extends Controller
             'email' => trim((string) $_POST['email']),
             'perfil_id' => (int) $_POST['perfil_id'],
             'situacao' => $_POST['situacao'] ?? 'ativo',
+            'curso_id' => ($_POST['curso_id'] ?? '') ?: null,
         ];
         if (!empty($_POST['senha'])) {
             $data['senha_hash'] = password_hash((string) $_POST['senha'], PASSWORD_DEFAULT);
         }
         (new User())->update((int) $_POST['id'], $data);
-        flash('success', 'Usuário atualizado.');
+        flash('success', 'Usuario atualizado.');
         redirect('/desenvolvedor/usuarios');
     }
 
@@ -76,7 +85,7 @@ class UsuarioController extends Controller
         if (!$user->deleteSafely($id)) {
             $user->anonymize($id);
         }
-        flash('success', 'Usuário removido.');
+        flash('success', 'Usuario removido.');
         redirect('/desenvolvedor/usuarios');
     }
 
@@ -84,7 +93,7 @@ class UsuarioController extends Controller
     {
         requireProfile('Desenvolvedor');
         $this->view('usuarios/solicitacoes', [
-            'title' => 'Solicitações de usuários',
+            'title' => 'Solicitacoes de usuarios',
             'solicitacoes' => (new SolicitacaoUsuario())->recentes(),
             'perfis' => (new Perfil())->all('nivel DESC'),
         ]);
@@ -97,17 +106,17 @@ class UsuarioController extends Controller
         $solicitacoes = new SolicitacaoUsuario();
         $solicitacao = $solicitacoes->find((int) ($_POST['id'] ?? 0));
         if (!$solicitacao || $solicitacao['situacao'] !== 'pendente') {
-            flash('error', 'Solicitação não encontrada ou já analisada.');
+            flash('error', 'Solicitacao nao encontrada ou ja analisada.');
             redirect('/desenvolvedor/usuarios/solicitacoes');
         }
         if ((new User())->findByEmail((string) $solicitacao['email'])) {
-            flash('error', 'Já existe um usuário com este e-mail.');
+            flash('error', 'Ja existe um usuario com este e-mail.');
             redirect('/desenvolvedor/usuarios/solicitacoes');
         }
 
         $senha = trim((string) ($_POST['senha'] ?? ''));
         if ($senha === '') {
-            flash('error', 'Informe uma senha inicial para aprovar a solicitação.');
+            flash('error', 'Informe uma senha inicial para aprovar a solicitacao.');
             redirect('/desenvolvedor/usuarios/solicitacoes');
         }
 
@@ -117,10 +126,11 @@ class UsuarioController extends Controller
             'senha_hash' => password_hash($senha, PASSWORD_DEFAULT),
             'perfil_id' => (int) $_POST['perfil_id'],
             'situacao' => $_POST['situacao'] ?? 'ativo',
+            'curso_id' => ($_POST['curso_id'] ?? '') ?: null,
         ]);
         $solicitacoes->aprovar((int) $solicitacao['id'], $usuarioId, (int) currentUser()['id']);
-        audit('Usuários', 'aprovação', 'Solicitação aprovada e usuário criado.', ['solicitacao_id' => $solicitacao['id'], 'usuario_id' => $usuarioId]);
-        flash('success', 'Solicitação aprovada e usuário criado.');
+        audit('Usuarios', 'aprovacao', 'Solicitacao aprovada e usuario criado.', ['solicitacao_id' => $solicitacao['id'], 'usuario_id' => $usuarioId]);
+        flash('success', 'Solicitacao aprovada e usuario criado.');
         redirect('/desenvolvedor/usuarios/solicitacoes');
     }
 
@@ -131,12 +141,22 @@ class UsuarioController extends Controller
         $solicitacoes = new SolicitacaoUsuario();
         $solicitacao = $solicitacoes->find((int) ($_POST['id'] ?? 0));
         if (!$solicitacao || $solicitacao['situacao'] !== 'pendente') {
-            flash('error', 'Solicitação não encontrada ou já analisada.');
+            flash('error', 'Solicitacao nao encontrada ou ja analisada.');
             redirect('/desenvolvedor/usuarios/solicitacoes');
         }
         $solicitacoes->recusar((int) $solicitacao['id'], (int) currentUser()['id']);
-        audit('Usuários', 'recusa', 'Solicitação de usuário recusada.', ['solicitacao_id' => $solicitacao['id']]);
-        flash('success', 'Solicitação recusada.');
+        audit('Usuarios', 'recusa', 'Solicitacao de usuario recusada.', ['solicitacao_id' => $solicitacao['id']]);
+        flash('success', 'Solicitacao recusada.');
+        redirect('/desenvolvedor/usuarios/solicitacoes');
+    }
+
+    public function limparSolicitacoesAnalisadas(): void
+    {
+        requireProfile('Desenvolvedor');
+        verifyCsrf();
+        $total = (new SolicitacaoUsuario())->limparAnalisadas();
+        audit('Usuarios', 'limpeza', 'Solicitacoes analisadas removidas.', ['total' => $total]);
+        flash('success', $total . ' solicitacao(oes) aprovada(s) ou recusada(s) removida(s).');
         redirect('/desenvolvedor/usuarios/solicitacoes');
     }
 }

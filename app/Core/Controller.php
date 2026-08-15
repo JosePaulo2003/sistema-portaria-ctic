@@ -3,12 +3,23 @@ declare(strict_types=1);
 
 namespace App\Core;
 
+use App\Models\Sala;
+
 // Controller base com atalhos para views HTML e respostas JSON.
 class Controller
 {
     protected function view(string $view, array $data = [], string $layout = 'admin'): void
     {
         View::render($view, $data, $layout);
+    }
+
+    protected function salasHome(string|array $profiles): void
+    {
+        requireProfile($profiles);
+        $this->view('salas/home', [
+            'title' => 'Salas',
+            'salas' => (new Sala())->listDisponibilidade($_GET),
+        ]);
     }
 
     protected function json(array $data, int $status = 200): void

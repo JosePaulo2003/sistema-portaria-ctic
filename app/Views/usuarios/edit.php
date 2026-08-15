@@ -1,5 +1,5 @@
 <section class="section-header">
-    <h1>Editar usuário</h1>
+    <h1>Editar usuario</h1>
     <a class="button button--secondary" href="<?= e(baseUrl('/desenvolvedor/usuarios')) ?>">Voltar</a>
 </section>
 
@@ -29,7 +29,18 @@
         </select>
     </label>
 
-    <label>Situação
+    <label>Curso vinculado
+        <select name="curso_id">
+            <option value="">Sem curso</option>
+            <?php foreach (($cursos ?? []) as $curso): ?>
+                <option value="<?= e($curso['id']) ?>" <?= (int) ($usuario['curso_id'] ?? 0) === (int) $curso['id'] ? 'selected' : '' ?>>
+                    <?= e($curso['nome']) ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+    </label>
+
+    <label>Situacao
         <select name="situacao">
             <?php foreach (['ativo', 'pendente', 'inativo', 'bloqueado'] as $situacao): ?>
                 <option value="<?= e($situacao) ?>" <?= $usuario['situacao'] === $situacao ? 'selected' : '' ?>>
@@ -44,6 +55,6 @@
     </label>
 
     <div class="form-actions">
-        <button class="button" type="submit">Salvar alterações</button>
+        <button class="button" type="submit">Salvar alteracoes</button>
     </div>
 </form>

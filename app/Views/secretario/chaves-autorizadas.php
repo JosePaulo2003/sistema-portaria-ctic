@@ -1,8 +1,10 @@
 <?php $diasSemana = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo']; ?>
 
+<?php $actionPrefix = $actionPrefix ?? '/secretario/chaves-autorizadas'; ?>
+
 <section class="section-header"><h1>Chaves Autorizadas</h1></section>
 
-<form method="post" class="card form-grid">
+<form method="post" action="<?= e(baseUrl($actionPrefix)) ?>" class="card form-grid">
     <?= csrfField() ?>
     <label>Usuário
         <select name="usuario_id">
@@ -19,10 +21,10 @@
         </select>
     </label>
     <label>Início
-        <input type="datetime-local" name="inicio_autorizacao">
+        <input type="text" name="inicio_autorizacao" data-date-br="datetime" placeholder="dd/mm/aaaa hh:mm" inputmode="numeric" maxlength="16" pattern="\d{2}/\d{2}/\d{4}\s\d{2}:\d{2}" title="Use o formato dd/mm/aaaa hh:mm" autocomplete="off">
     </label>
     <label>Expira em
-        <input type="datetime-local" name="expira_em" data-expiration-field>
+        <input type="text" name="expira_em" data-expiration-field data-date-br="datetime" placeholder="dd/mm/aaaa hh:mm" inputmode="numeric" maxlength="16" pattern="\d{2}/\d{2}/\d{4}\s\d{2}:\d{2}" title="Use o formato dd/mm/aaaa hh:mm" autocomplete="off">
     </label>
     <div class="permission-options full">
         <label class="checkbox-pill">
@@ -76,7 +78,7 @@
                 ?>
                 <tr>
                     <td colspan="6">
-                        <form method="post" action="<?= e(baseUrl('/secretario/chaves-autorizadas/atualizar')) ?>" class="permission-edit-form">
+                        <form method="post" action="<?= e(baseUrl($actionPrefix . '/atualizar')) ?>" class="permission-edit-form">
                             <?= csrfField() ?>
                             <input type="hidden" name="id" value="<?= e($p['id']) ?>">
                             <label>Usuário
@@ -98,10 +100,13 @@
                                 </select>
                             </label>
                             <label>Início
-                                <input type="datetime-local" name="inicio_autorizacao" value="<?= e($p['inicio_autorizacao'] ? date('Y-m-d\TH:i', strtotime($p['inicio_autorizacao'])) : '') ?>">
+                                <input type="text" name="inicio_autorizacao" data-date-br="datetime" value="<?= e(formatDateTimeBr($p['inicio_autorizacao'] ?? null, '')) ?>" placeholder="dd/mm/aaaa hh:mm" inputmode="numeric" maxlength="16" pattern="\d{2}/\d{2}/\d{4}\s\d{2}:\d{2}" title="Use o formato dd/mm/aaaa hh:mm" autocomplete="off">
                             </label>
                             <label>Expira em
-                                <input type="datetime-local" name="expira_em" data-expiration-field value="<?= e($p['expira_em'] ? date('Y-m-d\TH:i', strtotime($p['expira_em'])) : '') ?>">
+                                <input type="text" name="expira_em" data-expiration-field data-date-br="datetime" value="<?= e(formatDateTimeBr($p['expira_em'] ?? null, '')) ?>" placeholder="dd/mm/aaaa hh:mm" inputmode="numeric" maxlength="16" pattern="\d{2}/\d{2}/\d{4}\s\d{2}:\d{2}" title="Use o formato dd/mm/aaaa hh:mm" autocomplete="off">
+                            </label>
+                            <label>Cadastrada em
+                                <input type="text" value="<?= e(formatDateTimeBr($p['criado_em'] ?? null)) ?>" readonly>
                             </label>
                             <label>Situação
                                 <select name="situacao">
@@ -143,7 +148,7 @@
                                 <button class="button" type="submit">Salvar</button>
                             </div>
                         </form>
-                        <form method="post" action="<?= e(baseUrl('/secretario/chaves-autorizadas/revogar')) ?>" class="inline-actions">
+                        <form method="post" action="<?= e(baseUrl($actionPrefix . '/revogar')) ?>" class="inline-actions">
                             <?= csrfField() ?>
                             <input type="hidden" name="id" value="<?= e($p['id']) ?>">
                             <button class="button button--danger" data-confirm="Excluir esta permissão de chave?" type="submit">Excluir</button>

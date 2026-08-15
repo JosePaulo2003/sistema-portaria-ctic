@@ -39,6 +39,6 @@ class AdvertenciaChave extends Model
 
         $stmt = $this->db()->prepare('SELECT COUNT(*) FROM advertencias_chaves WHERE usuario_id = ? AND id > ?');
         $stmt->execute([$userId, $lastBlockedAdvertenciaId]);
-        return (int) $stmt->fetchColumn() >= 1;
+        return (int) $stmt->fetchColumn() >= 3;
     }
 }

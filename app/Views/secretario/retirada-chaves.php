@@ -1,10 +1,10 @@
 <section class="section-header">
     <h1>Retirada de Chaves e Itens</h1>
-    <p>Somente recursos disponíveis aparecem nesta lista.</p>
+    <p>A lista mostra os recursos e a situacao atual para retirada.</p>
 </section>
 
 <section class="resource-section">
-    <h2>Chaves disponíveis</h2>
+    <h2>Chaves</h2>
     <?php
     $retiradaAction = baseUrl('/secretario/retirada-chaves/retirar');
     $observacaoPlaceholder = 'Observação opcional';

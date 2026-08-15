@@ -14,7 +14,10 @@ ini_set('session.use_trans_sid', '0');
 ini_set('session.cookie_httponly', '1');
 ini_set('session.sid_length', '48');
 ini_set('session.sid_bits_per_character', '6');
-ini_set('session.gc_maxlifetime', '7200');
+// Sem encerramento automatico por inatividade. A sessao termina pelo botao
+// Sair ou quando o cookie da sessao e encerrado pelo navegador. A retencao
+// longa abaixo evita que o servidor remova uma sessao valida durante o uso.
+ini_set('session.gc_maxlifetime', '31536000');
 ini_set('session.lazy_write', '1');
 
 $secureCookie = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';

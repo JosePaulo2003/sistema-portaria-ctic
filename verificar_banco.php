@@ -44,6 +44,7 @@ if ($pdo instanceof PDO) {
     }
     $add('Usuários cadastrados', (int) $pdo->query('SELECT COUNT(*) FROM usuarios')->fetchColumn() > 0, 'Total: ' . $pdo->query('SELECT COUNT(*) FROM usuarios')->fetchColumn());
     $add('Coluna acesso_total', $tableExists($pdo, 'permissoes_salas') && (bool) $pdo->query("SHOW COLUMNS FROM permissoes_salas LIKE 'acesso_total'")->fetch(), 'Necessária para permissão total de chave.');
+    $add('Validade de usuários temporários', $tableExists($pdo, 'usuarios') && (bool) $pdo->query("SHOW COLUMNS FROM usuarios LIKE 'acesso_expira_em'")->fetch(), 'Necessária para expirar visitantes automaticamente.');
 }
 
 $okCount = count(array_filter($checks, fn (array $check): bool => $check['ok']));
