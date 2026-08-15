@@ -26,13 +26,17 @@ $router = new Router();
 $router->get('/', fn () => currentUser() ? redirect(moduleForProfile(userProfile() ?? '')) : redirect('/login'));
 $router->get('/login', [AuthController::class, 'loginForm']);
 $router->post('/login', [AuthController::class, 'login']);
+$router->get('/login/portaria', [AuthController::class, 'portariaForm']);
+$router->post('/login/portaria', [AuthController::class, 'loginPortaria']);
 $router->get('/recuperar-senha', [AuthController::class, 'forgotForm']);
 $router->post('/recuperar-senha', [AuthController::class, 'forgot']);
 $router->post('/logout', [AuthController::class, 'logout']);
 $router->post('/integracoes/google-form/usuarios', [FormularioUsuarioController::class, 'receber']);
 $router->get('/perfil', [PerfilController::class, 'edit']);
 $router->post('/perfil', [PerfilController::class, 'update']);
+$router->get('/calendario-salas', [SalaController::class, 'calendario']);
 $router->get('/salas/detalhes', [SalaController::class, 'detalhes']);
+$router->get('/salas/atividade', [SalaController::class, 'atividade']);
 
 $router->get('/desenvolvedor', [DesenvolvedorController::class, 'index']);
 $router->get('/desenvolvedor/usuarios', [UsuarioController::class, 'index']);
@@ -61,6 +65,8 @@ $router->post('/diretor/chaves/retirar', [ProfessorController::class, 'retirarCh
 $router->get('/diretor/reservas', [DiretorController::class, 'reservas']);
 $router->post('/diretor/reservas/status', [DiretorController::class, 'atualizarReservaStatus']);
 $router->get('/diretor/movimentacoes', [DiretorController::class, 'movimentacoes']);
+$router->get('/diretor/relatorios', [DiretorController::class, 'relatorios']);
+$router->get('/diretor/relatorios/exportar', [DiretorController::class, 'exportarRelatorio']);
 $router->get('/diretor/disponibilidade', [DiretorController::class, 'disponibilidade']);
 
 $router->get('/coordenador', [CoordenadorController::class, 'index']);
@@ -81,20 +87,10 @@ $router->get('/administrativo/retiradas', [AdministrativoController::class, 'ret
 $router->post('/administrativo/retiradas/chave', [ProfessorController::class, 'retirarChave']);
 $router->post('/administrativo/retiradas/item', [ProfessorController::class, 'retirarItem']);
 $router->get('/administrativo/disponibilidade-salas', [AdministrativoController::class, 'disponibilidadeSalas']);
-$router->get('/administrativo/salas', [AdministrativoController::class, 'salas']);
-$router->post('/administrativo/salas', [AdministrativoController::class, 'salvarSala']);
-$router->post('/administrativo/salas/atualizar', [AdministrativoController::class, 'atualizarSala']);
-$router->post('/administrativo/salas/status', [AdministrativoController::class, 'atualizarSala']);
-$router->post('/administrativo/salas/excluir', [AdministrativoController::class, 'excluirSala']);
 $router->get('/administrativo/chaves-autorizadas', [AdministrativoController::class, 'chavesAutorizadas']);
 $router->post('/administrativo/chaves-autorizadas', [AdministrativoController::class, 'salvarChaveAutorizada']);
 $router->post('/administrativo/chaves-autorizadas/atualizar', [AdministrativoController::class, 'atualizarChaveAutorizada']);
 $router->post('/administrativo/chaves-autorizadas/revogar', [AdministrativoController::class, 'excluirChaveAutorizada']);
-$router->get('/administrativo/itens', [AdministrativoController::class, 'itens']);
-$router->post('/administrativo/itens', [AdministrativoController::class, 'salvarItem']);
-$router->post('/administrativo/itens/atualizar', [AdministrativoController::class, 'atualizarItem']);
-$router->post('/administrativo/itens/status', [AdministrativoController::class, 'atualizarItem']);
-$router->post('/administrativo/itens/excluir', [AdministrativoController::class, 'excluirItem']);
 
 $router->get('/secretario', [SecretarioController::class, 'index']);
 $router->get('/secretario/cursos', [SecretarioController::class, 'cursos']);
@@ -114,6 +110,16 @@ $router->post('/secretario/retirada-chaves/retirar', [ProfessorController::class
 $router->post('/secretario/retirada-chaves/retirar-item', [ProfessorController::class, 'retirarItem']);
 
 $router->get('/portaria', [PortariaController::class, 'index']);
+$router->get('/portaria/salas', [PortariaController::class, 'salas']);
+$router->post('/portaria/salas', [PortariaController::class, 'salvarSala']);
+$router->post('/portaria/salas/atualizar', [PortariaController::class, 'atualizarSala']);
+$router->post('/portaria/salas/status', [PortariaController::class, 'atualizarSala']);
+$router->post('/portaria/salas/excluir', [PortariaController::class, 'excluirSala']);
+$router->get('/portaria/itens', [PortariaController::class, 'itens']);
+$router->post('/portaria/itens', [PortariaController::class, 'salvarItem']);
+$router->post('/portaria/itens/atualizar', [PortariaController::class, 'atualizarItem']);
+$router->post('/portaria/itens/status', [PortariaController::class, 'atualizarItem']);
+$router->post('/portaria/itens/excluir', [PortariaController::class, 'excluirItem']);
 $router->get('/portaria/retiradas', [PortariaController::class, 'retiradas']);
 $router->post('/portaria/retiradas/registrar-chave', [PortariaController::class, 'registrarRetiradaChave']);
 $router->post('/portaria/retiradas/devolver-chave', [PortariaController::class, 'devolverChave']);
@@ -124,7 +130,9 @@ $router->post('/portaria/reservas/atualizar', [PortariaController::class, 'atual
 $router->post('/portaria/reservas/excluir-historico', [PortariaController::class, 'excluirReservaHistorico']);
 $router->get('/portaria/permissoes', [PortariaController::class, 'permissoes']);
 $router->post('/portaria/permissoes/chaves', [PortariaController::class, 'salvarPermissaoChave']);
+$router->post('/portaria/permissoes/chaves/atualizar', [PortariaController::class, 'atualizarPermissaoChave']);
 $router->post('/portaria/permissoes/chaves/revogar', [PortariaController::class, 'revogarPermissaoChave']);
+$router->post('/portaria/permissoes/chaves/limpar-revogadas', [PortariaController::class, 'limparPermissoesRevogadas']);
 $router->get('/portaria/vinculos-bolsistas', [PortariaController::class, 'vinculosBolsistas']);
 $router->post('/portaria/vinculos-bolsistas', [PortariaController::class, 'salvarVinculoBolsista']);
 $router->get('/portaria/visitantes', [PortariaController::class, 'visitantes']);
@@ -133,6 +141,7 @@ $router->post('/portaria/visitantes/atualizar', [PortariaController::class, 'atu
 $router->post('/portaria/visitantes/excluir', [PortariaController::class, 'excluirVisitante']);
 $router->get('/portaria/salas-hoje', [PortariaController::class, 'salasHoje']);
 $router->get('/portaria/historico', [PortariaController::class, 'historico']);
+$router->get('/portaria/relatorio-movimentacoes', [PortariaController::class, 'relatorioMovimentacoes']);
 
 $router->get('/professor', [ProfessorController::class, 'index']);
 $router->get('/professor/disponibilidade-salas', [ProfessorController::class, 'disponibilidadeSalas']);

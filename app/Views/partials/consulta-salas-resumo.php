@@ -3,10 +3,56 @@
     <p>Disponibilidade pública por chave retirada, reserva ativa, manutenção ou bloqueio.</p>
 </section>
 
+<?php
+$salasCadastradas = (new \App\Models\Sala())->all('nome');
+$sugestoesBuscaSala = [];
+
+foreach ($salasCadastradas as $salaCadastrada) {
+    $nomeSala = trim((string) ($salaCadastrada['nome'] ?? ''));
+    if ($nomeSala !== '') {
+        $sugestoesBuscaSala[mb_strtolower($nomeSala)] = $nomeSala;
+    }
+}
+
+natcasesort($sugestoesBuscaSala);
+?>
+
 <form method="get" class="card form-grid filters">
-    <label>Busca
-        <input name="busca" value="<?= e($_GET['busca'] ?? '') ?>" placeholder="Nome, código ou bloco">
-    </label>
+    <div class="room-autocomplete" data-room-autocomplete>
+        <label for="salas-filtro-busca">Busca</label>
+        <div class="room-autocomplete__field">
+            <input
+                id="salas-filtro-busca"
+                name="busca"
+                value="<?= e($_GET['busca'] ?? '') ?>"
+                placeholder="Digite ou selecione uma sala"
+                autocomplete="off"
+                aria-autocomplete="list"
+                aria-controls="salas-filtro-sugestoes"
+                aria-expanded="false"
+                data-room-autocomplete-input
+            >
+            <div
+                id="salas-filtro-sugestoes"
+                class="room-autocomplete__list"
+                role="listbox"
+                data-room-autocomplete-list
+                hidden
+            >
+            <?php foreach ($sugestoesBuscaSala as $sugestaoBuscaSala): ?>
+                <button
+                    type="button"
+                    class="room-autocomplete__option"
+                    role="option"
+                    tabindex="-1"
+                    data-room-autocomplete-option
+                    data-value="<?= e($sugestaoBuscaSala) ?>"
+                ><?= e($sugestaoBuscaSala) ?></button>
+            <?php endforeach; ?>
+                <p class="room-autocomplete__empty" data-room-autocomplete-empty hidden>Nenhuma sala encontrada.</p>
+            </div>
+        </div>
+    </div>
     <label>Status
         <select name="status">
             <option value="">Todos</option>

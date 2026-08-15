@@ -10,6 +10,72 @@ class Reserva extends Model
 {
     protected string $table = 'reservas';
 
+    public function paraCalendario(string $inicio, string $fim, ?int $salaId = null): array
+    {
+        $sql = 'SELECT r.*, COALESCE(NULLIF(r.solicitante_nome_manual, ""), u.nome) AS usuario_nome,
+                    s.nome AS sala_nome, s.codigo AS sala_codigo
+             FROM reservas r
+             JOIN usuarios u ON u.id = r.usuario_id
+             JOIN salas s ON s.id = r.sala_id
+             WHERE r.situacao IN ("pendente", "confirmada", "encerrada")
+               AND r.inicio_em < ?
+               AND r.fim_em > ?';
+        $params = [$fim, $inicio];
+        if ($salaId !== null && $salaId > 0) {
+            $sql .= ' AND r.sala_id = ?';
+            $params[] = $salaId;
+        }
+        $sql .= ' ORDER BY r.inicio_em, s.nome, r.id';
+
+        $stmt = $this->db()->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll();
+    }
+
+    public function aulasRecorrentesParaCalendario(?string $salaNome = null): array
+    {
+        $sql = 'SELECT ra.*, u.nome AS professor_nome, s.id AS sala_id, s.codigo AS sala_codigo
+             FROM reservas_aula ra
+             JOIN usuarios u ON u.id = ra.professor_id
+             LEFT JOIN (SELECT MIN(id) AS id, nome FROM salas GROUP BY nome) sala_ref ON sala_ref.nome = ra.sala_nome
+             LEFT JOIN salas s ON s.id = sala_ref.id
+             WHERE ra.situacao = "ativa"';
+        $params = [];
+        if ($salaNome !== null && trim($salaNome) !== '') {
+            $sql .= ' AND ra.sala_nome = ?';
+            $params[] = trim($salaNome);
+        }
+        $sql .= ' ORDER BY ra.dia_semana, ra.horario_inicio, ra.sala_nome, ra.id';
+
+        $stmt = $this->db()->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll();
+    }
+
+    public function detalhesCalendario(int $id): ?array
+    {
+        $stmt = $this->db()->prepare(
+            'SELECT r.*,
+                    COALESCE(NULLIF(r.solicitante_nome_manual, ""), u.nome) AS solicitante_nome,
+                    u.nome AS solicitante_cadastrado_nome,
+                    u.email AS solicitante_email,
+                    s.nome AS sala_nome,
+                    s.codigo AS sala_codigo,
+                    s.bloco AS sala_bloco,
+                    s.tipo_ambiente AS sala_tipo,
+                    pa.nome AS periodo_academico_nome
+             FROM reservas r
+             JOIN usuarios u ON u.id = r.usuario_id
+             LEFT JOIN salas s ON s.id = r.sala_id
+             LEFT JOIN periodos_academicos pa ON pa.id = r.periodo_academico_id
+             WHERE r.id = ?
+             LIMIT 1'
+        );
+        $stmt->execute([$id]);
+        $row = $stmt->fetch();
+        return $row ?: null;
+    }
+
     public function withDetails(): array
     {
         return $this->db()->query(

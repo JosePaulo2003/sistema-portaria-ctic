@@ -6,8 +6,11 @@
 # Sessoes, logs e arquivos temporarios da aplicacao
 storage/sessions/*
 storage/logs/*
+storage/backups/
 tmp/*
 output/*
+_local_backups/
+
 !storage/sessions/.gitkeep
 !storage/logs/.gitkeep
 !tmp/.gitkeep
@@ -19,6 +22,7 @@ public/uploads/*
 
 # Dumps, backups e pacotes locais
 *.sql.gz
+*.tar.gz
 *.dump
 *.bak
 *.backup
@@ -34,9 +38,3 @@ Desktop.ini
 *.tmp
 *.temp
 *.log
-
-# Dumps locais com dados reais
-/sgrp-database-*.sql
-
-# Cópias locais de segurança
-/storage/backups/

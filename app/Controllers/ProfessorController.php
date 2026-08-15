@@ -183,8 +183,8 @@ class ProfessorController extends Controller
             'sala_id' => $salaId,
             'acesso_total' => 0,
             'autorizado_por' => $professorId,
-            'inicio_autorizacao' => $_POST['inicio_autorizacao'] ?: null,
-            'expira_em' => $_POST['expira_em'] ?: null,
+            'inicio_autorizacao' => $inicio?->format('Y-m-d H:i:s'),
+            'expira_em' => $expira?->format('Y-m-d H:i:s'),
             'dias_semana' => !empty($_POST['dias_semana']) ? implode(', ', (array) $_POST['dias_semana']) : null,
             'observacao' => $_POST['observacao'] ?? null,
             'situacao' => 'ativa',
@@ -282,6 +282,16 @@ class ProfessorController extends Controller
         if ($bloqueio) {
             return $bloqueio;
         }
+
+        $usuario = (new User())->findWithProfile($usuarioId);
+        if (!$usuario) {
+            return null;
+        }
+        $perfil = comparableProfile((string) ($usuario['perfil_nome'] ?? ''));
+        if (!in_array($perfil, [comparableProfile('Aluno'), comparableProfile('Aluno Bolsista')], true)) {
+            return null;
+        }
+
         $advertencias = new AdvertenciaChave();
         if (!$advertencias->shouldCreateBlock($usuarioId, $bloqueioModel->latestAdvertenciaIdByUser($usuarioId))) {
             return null;
@@ -356,8 +366,7 @@ class ProfessorController extends Controller
 
     private function criarDataHora(string $valor): ?\DateTimeImmutable
     {
-        $data = \DateTimeImmutable::createFromFormat('Y-m-d\TH:i', $valor);
-        return $data instanceof \DateTimeImmutable ? $data : null;
+        return \parseDateTimeInput($valor);
     }
 }
 

@@ -1,3 +1,14 @@
+<?php
+$statusRotulos = [
+    'confirmada' => 'Confirmada',
+    'pendente' => 'Pendente',
+    'encerrada' => 'Encerrada',
+    'aula' => 'Aula',
+    'retirada' => 'Chave retirada',
+];
+$salaId = (int) $sala['id'];
+?>
+
 <section class="section-header">
     <div>
         <h1><?= e($sala['nome']) ?></h1>
@@ -26,66 +37,103 @@
 </div>
 
 <section class="resource-section">
-    <h2>Reservas</h2>
-    <div class="card table-wrap">
-        <table>
-            <thead><tr><th>Título</th><th>Usuário</th><th>Início</th><th>Fim</th><th>Situação</th></tr></thead>
-            <tbody>
-                <?php foreach ($reservas as $reserva): ?>
-                    <tr>
-                        <td><?= e($reserva['titulo']) ?></td>
-                        <td><?= e($reserva['usuario_nome']) ?></td>
-                        <td><?= e(date('d/m/Y H:i', strtotime($reserva['inicio_em']))) ?></td>
-                        <td><?= e(date('d/m/Y H:i', strtotime($reserva['fim_em']))) ?></td>
-                        <td><span class="status-badge"><?= e($reserva['situacao']) ?></span></td>
-                    </tr>
-                <?php endforeach; ?>
-                <?php if (!$reservas): ?><tr><td colspan="5">Nenhuma reserva registrada para esta sala.</td></tr><?php endif; ?>
-            </tbody>
-        </table>
+    <div class="section-header room-calendar-heading">
+        <div>
+            <h2>Agenda mensal da sala</h2>
+            <p>Reservas, aulas recorrentes e pessoas que retiraram a chave, organizadas por dia.</p>
+        </div>
     </div>
-</section>
 
-<section class="resource-section">
-    <h2>Aulas do semestre</h2>
-    <div class="card table-wrap">
-        <table>
-            <thead><tr><th>Disciplina</th><th>Professor</th><th>Turma</th><th>Dia</th><th>Horário</th><th>Situação</th></tr></thead>
-            <tbody>
-                <?php foreach ($aulas as $aula): ?>
-                    <tr>
-                        <td><?= e($aula['disciplina']) ?></td>
-                        <td><?= e($aula['professor_nome']) ?></td>
-                        <td><?= e($aula['turma']) ?></td>
-                        <td><?= e($aula['dia_semana']) ?></td>
-                        <td><?= e(substr($aula['horario_inicio'], 0, 5)) ?> às <?= e(substr($aula['horario_fim'], 0, 5)) ?></td>
-                        <td><span class="status-badge"><?= e($aula['situacao']) ?></span></td>
-                    </tr>
-                <?php endforeach; ?>
-                <?php if (!$aulas): ?><tr><td colspan="6">Nenhuma aula vinculada a esta sala.</td></tr><?php endif; ?>
-            </tbody>
-        </table>
-    </div>
-</section>
+    <section class="card room-calendar-toolbar room-calendar-toolbar--room" aria-label="Controles do calendário">
+        <nav class="room-calendar-navigation" aria-label="Navegação entre meses">
+            <a
+                class="button button--secondary room-calendar-navigation__arrow"
+                href="<?= e(baseUrl('/salas/detalhes?id=' . $salaId . '&mes=' . $mesAnterior)) ?>"
+                data-calendar-month-link
+                aria-label="Mês anterior"
+            >‹</a>
+            <a
+                class="button button--secondary"
+                href="<?= e(baseUrl('/salas/detalhes?id=' . $salaId . '&mes=' . $mesAtual)) ?>"
+                data-calendar-month-link
+            >Hoje</a>
+            <a
+                class="button button--secondary room-calendar-navigation__arrow"
+                href="<?= e(baseUrl('/salas/detalhes?id=' . $salaId . '&mes=' . $mesSeguinte)) ?>"
+                data-calendar-month-link
+                aria-label="Próximo mês"
+            >›</a>
+        </nav>
 
-<section class="resource-section">
-    <h2>Ocupações e movimentações</h2>
-    <div class="card table-wrap">
-        <table>
-            <thead><tr><th>Usuário</th><th>Tipo</th><th>Retirada</th><th>Devolução</th><th>Situação</th><th>Observação</th></tr></thead>
-            <tbody>
-                <?php foreach ($movimentacoes as $mov): ?>
-                    <tr>
-                        <td><?= e($mov['usuario_nome']) ?></td>
-                        <td><?= e(str_replace('_', ' ', $mov['tipo_movimentacao'])) ?></td>
-                        <td><?= e($mov['retirada_em'] ? date('d/m/Y H:i', strtotime($mov['retirada_em'])) : '-') ?></td>
-                        <td><?= e($mov['devolucao_real_em'] ? date('d/m/Y H:i', strtotime($mov['devolucao_real_em'])) : '-') ?></td>
-                        <td><span class="status-badge"><?= e($mov['situacao']) ?></span></td>
-                        <td><?= e($mov['observacao'] ?? '-') ?></td>
-                    </tr>
-                <?php endforeach; ?>
-                <?php if (!$movimentacoes): ?><tr><td colspan="6">Nenhuma movimentação registrada para esta sala.</td></tr><?php endif; ?>
-            </tbody>
-        </table>
+        <div class="room-calendar-toolbar__month" aria-live="polite">
+            <strong><?= e($rotuloMes) ?></strong>
+            <span><?= e($totalReservas) ?> reservas · <?= e($totalAulasMes) ?> aulas · <?= e($totalRetiradas) ?> retiradas</span>
+        </div>
+    </section>
+
+    <div class="room-calendar-legend" aria-label="Legenda do calendário">
+        <span><i class="room-calendar-legend__color is-confirmada"></i>Reserva confirmada</span>
+        <span><i class="room-calendar-legend__color is-pendente"></i>Reserva pendente</span>
+        <span><i class="room-calendar-legend__color is-encerrada"></i>Reserva encerrada</span>
+        <span><i class="room-calendar-legend__color is-aula"></i>Aula recorrente</span>
+        <span><i class="room-calendar-legend__color is-retirada"></i>Retirada de chave</span>
+        <strong data-calendar-visible-count></strong>
     </div>
+
+    <section class="card room-calendar" data-room-calendar>
+        <div class="room-calendar__weekdays" aria-hidden="true">
+            <?php foreach (['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'] as $diaSemana): ?>
+                <span><?= e($diaSemana) ?></span>
+            <?php endforeach; ?>
+        </div>
+
+        <div class="room-calendar__grid">
+            <?php foreach ($semanas as $semana): ?>
+                <?php foreach ($semana as $dia): ?>
+                    <article
+                        class="room-calendar__day<?= !$dia['dentro_mes'] ? ' is-outside' : '' ?><?= $dia['hoje'] ? ' is-today' : '' ?>"
+                        data-calendar-day
+                        aria-label="<?= e($dia['dia_semana'] . ', ' . formatDateBr($dia['data'])) ?>"
+                    >
+                        <header class="room-calendar__day-header">
+                            <span class="room-calendar__day-weekday"><?= e($dia['dia_semana']) ?></span>
+                            <time datetime="<?= e($dia['data']) ?>"><?= e($dia['dia']) ?></time>
+                            <?php if ($dia['hoje']): ?><span>Hoje</span><?php endif; ?>
+                        </header>
+
+                        <div class="room-calendar__events">
+                            <?php foreach ($dia['eventos'] as $evento): ?>
+                                <?php
+                                $situacao = array_key_exists((string) $evento['situacao'], $statusRotulos)
+                                    ? (string) $evento['situacao']
+                                    : 'pendente';
+                                $tipoPrincipal = match ((string) ($evento['tipo'] ?? '')) {
+                                    'aula' => 'Aula',
+                                    'retirada' => 'Retirada de chave',
+                                    default => 'Reserva',
+                                };
+                                ?>
+                                <a
+                                    class="room-calendar-event is-<?= e($situacao) ?>"
+                                    href="<?= e(baseUrl('/salas/atividade?tipo=' . urlencode((string) $evento['atividade_tipo']) . '&id=' . (int) $evento['atividade_id'] . '&mes=' . $inicioMes->format('Y-m') . '&data=' . $dia['data'])) ?>"
+                                    data-calendar-event
+                                    data-room-id="<?= e($salaId) ?>"
+                                    title="<?= e($evento['horario'] . ' · ' . $evento['titulo']) ?>"
+                                >
+                                    <span class="room-calendar-event__time"><?= e($evento['horario']) ?></span>
+                                    <strong><?= e($tipoPrincipal) ?></strong>
+                                    <span class="room-calendar-event__title"><?= e($evento['titulo']) ?></span>
+                                    <small><?= e($statusRotulos[$situacao]) ?></small>
+                                </a>
+                            <?php endforeach; ?>
+
+                            <span class="room-calendar__empty" data-calendar-day-empty <?= $dia['eventos'] ? 'hidden' : '' ?>>Sem atividades</span>
+                        </div>
+                    </article>
+                <?php endforeach; ?>
+            <?php endforeach; ?>
+        </div>
+    </section>
+
+    <p class="muted room-calendar-tip">Clique em uma atividade para abrir todas as informações em uma página. Use as setas para navegar pelos meses.</p>
 </section>

@@ -23,7 +23,7 @@
                     </td>
                     <td><?= e($m['sala_nome'] ?? $m['item_nome'] ?? '-') ?></td>
                     <td><?= e(str_replace('_', ' ', $m['tipo_movimentacao'])) ?></td>
-                    <td><?= e($m['retirada_em'] ?? $m['criado_em']) ?></td>
+                    <td><?= e(formatDateTimeBr($m['retirada_em'] ?? $m['criado_em'] ?? null)) ?></td>
                     <td><span class="status-badge"><?= e($m['situacao']) ?></span></td>
                 </tr>
             <?php endforeach; ?>

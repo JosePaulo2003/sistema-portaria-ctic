@@ -40,6 +40,7 @@ CREATE TABLE usuarios (
   senha_hash VARCHAR(255) NOT NULL,
   perfil_id INT NOT NULL,
   situacao ENUM('ativo','pendente','inativo','bloqueado') NOT NULL DEFAULT 'pendente',
+  acesso_expira_em DATETIME NULL,
   foto_perfil_url VARCHAR(255) NULL,
   professor_indicador_id INT NULL,
   projeto_pesquisa VARCHAR(255) NULL,
@@ -48,7 +49,8 @@ CREATE TABLE usuarios (
   atualizado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   ultimo_login_em DATETIME NULL,
   CONSTRAINT fk_usuarios_perfil FOREIGN KEY (perfil_id) REFERENCES perfis(id),
-  CONSTRAINT fk_usuarios_professor FOREIGN KEY (professor_indicador_id) REFERENCES usuarios(id) ON DELETE SET NULL
+  CONSTRAINT fk_usuarios_professor FOREIGN KEY (professor_indicador_id) REFERENCES usuarios(id) ON DELETE SET NULL,
+  INDEX idx_usuarios_acesso_expira (acesso_expira_em)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE solicitacoes_usuarios (

@@ -29,16 +29,18 @@ $diasSemanaReserva = [
     <label>Titulo
         <input name="titulo" required>
     </label>
-    <label>Usuario cadastrado
+    <label>Solicitante cadastrado
         <select name="usuario_id">
-            <option value="">Sem cadastro / informar nome</option>
+            <option value="">Pessoa sem cadastro</option>
             <?php foreach (($usuarios ?? []) as $usuario): ?>
-                <option value="<?= e($usuario['id']) ?>"><?= e($usuario['nome']) ?><?= !empty($usuario['email']) ? ' - ' . e($usuario['email']) : '' ?></option>
+                <option value="<?= e($usuario['id']) ?>">
+                    <?= e($usuario['nome']) ?> — <?= e($usuario['perfil_nome'] ?? '') ?><?= !empty($usuario['email']) ? ' (' . e($usuario['email']) . ')' : '' ?>
+                </option>
             <?php endforeach; ?>
         </select>
     </label>
     <label>Nome sem cadastro
-        <input name="solicitante_nome_manual" placeholder="Nome do solicitante">
+        <input name="solicitante_nome_manual" maxlength="180" placeholder="Preencha somente para pessoa sem cadastro">
     </label>
     <label>Inicio
         <input type="datetime-local" name="inicio_em" required>

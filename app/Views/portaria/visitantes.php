@@ -5,18 +5,20 @@
     <label>Nome<input name="nome" required></label>
     <label>E-mail<input type="email" name="email" required></label>
     <label>Senha<input type="password" name="senha" placeholder="Informe a senha inicial" required></label>
+    <label>Acesso válido até<input type="text" name="acesso_expira_em" data-date-br="datetime" placeholder="dd/mm/aaaa hh:mm" required></label>
     <div class="form-actions"><button class="button" type="submit">Criar visitante</button></div>
 </form>
 
 <div class="card table-wrap">
-    <table><thead><tr><th>Visitante</th><th>Ações</th></tr></thead><tbody>
+    <table><thead><tr><th>Visitante</th><th>Validade</th><th>Ações</th></tr></thead><tbody>
     <?php foreach ($visitantes as $v): ?>
-        <tr><td colspan="2">
+        <tr><td colspan="3">
             <form method="post" action="<?= e(baseUrl('/portaria/visitantes/atualizar')) ?>" class="inline-form row-edit-form row-edit-form--visitante">
                 <?= csrfField() ?><input type="hidden" name="id" value="<?= e($v['id']) ?>">
                 <label>Nome<input name="nome" required value="<?= e($v['nome']) ?>"></label>
                 <label>E-mail<input type="email" name="email" required value="<?= e($v['email']) ?>"></label>
                 <label>Senha<input name="senha" placeholder="Manter senha atual"></label>
+                <label>Acesso válido até<input type="text" name="acesso_expira_em" data-date-br="datetime" required value="<?= e(formatDateTimeBr($v['acesso_expira_em'] ?? null, '')) ?>"></label>
                 <label>Situação<select name="situacao"><?php foreach (['ativo','pendente','inativo','bloqueado'] as $situacao): ?><option value="<?= e($situacao) ?>" <?= $v['situacao'] === $situacao ? 'selected' : '' ?>><?= e($situacao) ?></option><?php endforeach; ?></select></label>
                 <button class="button">Salvar</button>
             </form>
@@ -26,6 +28,6 @@
             </form>
         </td></tr>
     <?php endforeach; ?>
-    <?php if (!$visitantes): ?><tr><td colspan="2">Nenhum visitante cadastrado.</td></tr><?php endif; ?>
+    <?php if (!$visitantes): ?><tr><td colspan="3">Nenhum visitante cadastrado.</td></tr><?php endif; ?>
     </tbody></table>
 </div>

@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Controller;
+use App\Models\BloqueioChave;
 use App\Models\Movimentacao;
 use App\Models\PermissaoSala;
 use App\Models\Sala;
@@ -28,8 +29,8 @@ class AlunoController extends Controller
 
     public function retiradasAutorizadas(): void
     {
-        requireAuth();
-        if (!(new PermissaoSala())->usuarioTemAlgumAcesso((int) currentUser()['id']) && !isDeveloper()) {
+        requireProfile('Aluno');
+        if (!(new PermissaoSala())->usuarioTemChaveAtribuida((int) currentUser()['id']) && !isDeveloper()) {
             http_response_code(403);
             exit('Acesso negado.');
         }
@@ -37,18 +38,25 @@ class AlunoController extends Controller
         $this->view('aluno/retiradas', [
             'title' => 'Retiradas',
             'salas' => (new Sala())->chavesParaRetirada(currentUser()),
+            'bloqueio' => (new BloqueioChave())->ativoParaUsuario((int) currentUser()['id']),
         ]);
     }
 
     public function retirarChaveAutorizada(): void
     {
-        requireAuth();
+        requireProfile('Aluno');
         verifyCsrf();
 
         $retorno = '/retiradas-autorizadas';
-        if (!(new PermissaoSala())->usuarioTemAlgumAcesso((int) currentUser()['id']) && !isDeveloper()) {
+        if (!(new PermissaoSala())->usuarioTemChaveAtribuida((int) currentUser()['id']) && !isDeveloper()) {
             http_response_code(403);
             exit('Acesso negado.');
+        }
+
+        $bloqueio = (new BloqueioChave())->ativoParaUsuario((int) currentUser()['id']);
+        if ($bloqueio) {
+            flash('error', 'Voce esta temporariamente bloqueado para retirar chaves ate ' . date('d/m/Y H:i', strtotime($bloqueio['fim_em'])) . '.');
+            redirect($retorno);
         }
 
         $senha = (string) ($_POST['senha_confirmacao'] ?? '');

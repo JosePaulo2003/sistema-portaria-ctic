@@ -50,7 +50,7 @@
                 <tr>
                     <td><?= e($m['usuario_nome']) ?></td>
                     <td><?= e($m['sala_nome'] ?? $m['item_nome'] ?? '-') ?></td>
-                    <td><?= e($m['retirada_em']) ?></td>
+                    <td><?= e(formatDateTimeBr($m['retirada_em'] ?? null)) ?></td>
                     <td>
                         <form method="post" action="<?= e(baseUrl($m['sala_id'] ? '/portaria/retiradas/devolver-chave' : '/portaria/retiradas/devolver-item')) ?>" class="inline-form">
                             <?= csrfField() ?>

@@ -21,10 +21,10 @@
         </select>
     </label>
     <label>Início
-        <input type="datetime-local" name="inicio_autorizacao">
+        <input type="text" name="inicio_autorizacao" data-date-br="datetime" placeholder="dd/mm/aaaa hh:mm" inputmode="numeric" maxlength="16" pattern="\d{2}/\d{2}/\d{4}\s\d{2}:\d{2}" title="Use o formato dd/mm/aaaa hh:mm" autocomplete="off">
     </label>
     <label>Expira em
-        <input type="datetime-local" name="expira_em" data-expiration-field>
+        <input type="text" name="expira_em" data-expiration-field data-date-br="datetime" placeholder="dd/mm/aaaa hh:mm" inputmode="numeric" maxlength="16" pattern="\d{2}/\d{2}/\d{4}\s\d{2}:\d{2}" title="Use o formato dd/mm/aaaa hh:mm" autocomplete="off">
     </label>
     <div class="permission-options full">
         <label class="checkbox-pill">
@@ -100,10 +100,13 @@
                                 </select>
                             </label>
                             <label>Início
-                                <input type="datetime-local" name="inicio_autorizacao" value="<?= e($p['inicio_autorizacao'] ? date('Y-m-d\TH:i', strtotime($p['inicio_autorizacao'])) : '') ?>">
+                                <input type="text" name="inicio_autorizacao" data-date-br="datetime" value="<?= e(formatDateTimeBr($p['inicio_autorizacao'] ?? null, '')) ?>" placeholder="dd/mm/aaaa hh:mm" inputmode="numeric" maxlength="16" pattern="\d{2}/\d{2}/\d{4}\s\d{2}:\d{2}" title="Use o formato dd/mm/aaaa hh:mm" autocomplete="off">
                             </label>
                             <label>Expira em
-                                <input type="datetime-local" name="expira_em" data-expiration-field value="<?= e($p['expira_em'] ? date('Y-m-d\TH:i', strtotime($p['expira_em'])) : '') ?>">
+                                <input type="text" name="expira_em" data-expiration-field data-date-br="datetime" value="<?= e(formatDateTimeBr($p['expira_em'] ?? null, '')) ?>" placeholder="dd/mm/aaaa hh:mm" inputmode="numeric" maxlength="16" pattern="\d{2}/\d{2}/\d{4}\s\d{2}:\d{2}" title="Use o formato dd/mm/aaaa hh:mm" autocomplete="off">
+                            </label>
+                            <label>Cadastrada em
+                                <input type="text" value="<?= e(formatDateTimeBr($p['criado_em'] ?? null)) ?>" readonly>
                             </label>
                             <label>Situação
                                 <select name="situacao">

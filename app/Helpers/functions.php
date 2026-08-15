@@ -117,6 +117,57 @@ function appTimestamp(): string
     return date('Y-m-d H:i:s');
 }
 
+/**
+ * Aceita datas digitadas no padrao brasileiro e o formato tecnico legado dos
+ * controles HTML. O banco continua recebendo DATETIME no formato do MySQL.
+ */
+function parseDateTimeInput(string $value): ?\DateTimeImmutable
+{
+    $value = trim($value);
+    if ($value === '') {
+        return null;
+    }
+
+    foreach (['d/m/Y H:i', 'd/m/Y', 'Y-m-d\\TH:i', 'Y-m-d\\TH:i:s', 'Y-m-d H:i:s', 'Y-m-d H:i', 'Y-m-d'] as $format) {
+        $date = \DateTimeImmutable::createFromFormat('!' . $format, $value);
+        $errors = \DateTimeImmutable::getLastErrors();
+        $valid = $errors === false
+            || ((int) ($errors['warning_count'] ?? 0) === 0 && (int) ($errors['error_count'] ?? 0) === 0);
+
+        if ($date instanceof \DateTimeImmutable && $valid && $date->format($format) === $value) {
+            return $date;
+        }
+    }
+
+    return null;
+}
+
+function databaseDateTimeFromInput(string $value): ?string
+{
+    $date = parseDateTimeInput($value);
+    return $date?->format('Y-m-d H:i:s');
+}
+
+function formatDateTimeBr(?string $value, string $fallback = '-'): string
+{
+    if ($value === null || trim($value) === '') {
+        return $fallback;
+    }
+
+    $date = parseDateTimeInput($value);
+    return $date?->format('d/m/Y H:i') ?? $fallback;
+}
+
+function formatDateBr(?string $value, string $fallback = '-'): string
+{
+    if ($value === null || trim($value) === '') {
+        return $fallback;
+    }
+
+    $date = parseDateTimeInput($value);
+    return $date?->format('d/m/Y') ?? $fallback;
+}
+
 function flash(?string $key = null, ?string $message = null): string
 {
     if ($key !== null && $message !== null) {
@@ -149,6 +200,10 @@ function currentUser(): ?array
         return null;
     }
     if (!empty($_SESSION['_user_cache']) && (int) $_SESSION['_user_cache']['id'] === (int) $_SESSION['user_id']) {
+        if (temporaryUserAccessExpired($_SESSION['_user_cache'])) {
+            clearAuthSession();
+            return null;
+        }
         return $_SESSION['_user_cache'];
     }
     $stmt = Database::pdo()->prepare(
@@ -159,8 +214,22 @@ function currentUser(): ?array
     );
     $stmt->execute([$_SESSION['user_id']]);
     $user = $stmt->fetch();
+    if ($user && temporaryUserAccessExpired($user)) {
+        clearAuthSession();
+        return null;
+    }
     $_SESSION['_user_cache'] = $user ?: null;
     return $user ?: null;
+}
+
+function temporaryUserAccessExpired(?array $user): bool
+{
+    if (!$user || comparableProfile((string) ($user['perfil_nome'] ?? '')) !== comparableProfile('Visitante')) {
+        return false;
+    }
+
+    $expiresAt = strtotime((string) ($user['acesso_expira_em'] ?? ''));
+    return $expiresAt !== false && $expiresAt <= time();
 }
 
 function authSessionFingerprint(): string
@@ -175,7 +244,8 @@ function clearAuthSession(): void
         $_SESSION['_user_cache'],
         $_SESSION['_auth_fingerprint'],
         $_SESSION['_auth_last_activity'],
-        $_SESSION['_auth_created_at']
+        $_SESSION['_auth_created_at'],
+        $_SESSION['_auth_expires_at']
     );
 }
 
@@ -185,22 +255,19 @@ function authSessionIsValid(): bool
         return false;
     }
 
-    $now = time();
-    $idleLimitSeconds = 3600;
     $fingerprint = $_SESSION['_auth_fingerprint'] ?? '';
-    $lastActivity = (int) ($_SESSION['_auth_last_activity'] ?? 0);
+    $accessExpiresAt = (int) ($_SESSION['_auth_expires_at'] ?? 0);
 
     if (!is_string($fingerprint) || !hash_equals($fingerprint, authSessionFingerprint())) {
         clearAuthSession();
         return false;
     }
 
-    if ($lastActivity > 0 && ($now - $lastActivity) > $idleLimitSeconds) {
+    if ($accessExpiresAt > 0 && $accessExpiresAt <= time()) {
         clearAuthSession();
         return false;
     }
 
-    $_SESSION['_auth_last_activity'] = $now;
     return true;
 }
 
@@ -274,6 +341,9 @@ function moduleForProfile(string $profile): string
 {
     $profile = fixMojibakeText($profile);
     $normalizado = mb_strtolower($profile);
+    if (comparableProfile($profile) === comparableProfile('Tecnico')) {
+        return '/portaria/salas';
+    }
     if (str_contains($normalizado, 'secret')) {
         return '/secretario';
     }

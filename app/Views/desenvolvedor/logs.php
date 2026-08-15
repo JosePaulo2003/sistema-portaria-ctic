@@ -30,7 +30,7 @@
         <tbody>
             <?php foreach ($logs as $log): ?>
                 <tr>
-                    <td><?= e($log['criado_em']) ?></td>
+                    <td><?= e(formatDateTimeBr($log['criado_em'] ?? null)) ?></td>
                     <td><?= e($log['usuario_nome'] ?? '-') ?></td>
                     <td><?= e($log['modulo']) ?></td>
                     <td><?= e($log['acao']) ?></td>
@@ -56,7 +56,7 @@
         <tbody>
             <?php foreach (($systemLogs ?? []) as $log): ?>
                 <tr>
-                    <td><?= e($log['criado_em']) ?></td>
+                    <td><?= e(formatDateTimeBr($log['criado_em'] ?? null)) ?></td>
                     <td><span class="status-badge"><?= e($log['nivel']) ?></span></td>
                     <td><?= e($log['origem']) ?></td>
                     <td><?= e($log['usuario_nome'] ?? '-') ?></td>

@@ -1,4 +1,4 @@
-<?php $actionPrefix = $actionPrefix ?? '/secretario/salas'; ?>
+<?php $actionPrefix = $actionPrefix ?? '/portaria/salas'; ?>
 
 <section class="section-header"><h1>Salas</h1></section>
 

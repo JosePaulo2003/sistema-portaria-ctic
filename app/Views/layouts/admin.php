@@ -1,6 +1,6 @@
 <?php
 $user = currentUser();
-$profile = $user['perfil_nome'] ?? '';
+$profile = fixMojibakeText((string) ($user['perfil_nome'] ?? ''));
 $nav = [
     'Desenvolvedor' => [
         ['Desenvolvedor', '/desenvolvedor'],
@@ -9,21 +9,21 @@ $nav = [
         ['Logs', '/desenvolvedor/logs'],
         ['Vinculos', '/desenvolvedor/vinculos-bolsistas'],
         ['Advertências', '/desenvolvedor/advertencias'],
+        ['Salas', '/portaria/salas'],
+        ['Itens', '/portaria/itens'],
     ],
     'Administrativo' => [
         ['Administrativo', '/administrativo'],
         ['Reservas', '/administrativo/reservas-salas'],
         ['Retiradas', '/administrativo/retiradas'],
         ['Disponibilidade', '/administrativo/disponibilidade-salas'],
-        ['Salas', '/administrativo/salas'],
         ['Chaves', '/administrativo/chaves-autorizadas'],
-        ['Itens', '/administrativo/itens'],
     ],
     'Diretor' => [
         ['Direção', '/diretor'],
         ['Chaves', '/diretor/chaves'],
         ['Reservas', '/diretor/reservas'],
-        ['Movimentações', '/diretor/movimentacoes'],
+        ['Relatórios', '/diretor/relatorios'],
         ['Disponibilidade', '/diretor/disponibilidade'],
     ],
     'Secretário de Curso' => [
@@ -45,8 +45,11 @@ $nav = [
         ['Vinculos', '/portaria/vinculos-bolsistas'],
         ['Permissões', '/portaria/permissoes'],
         ['Visitantes', '/portaria/visitantes'],
+        ['Salas', '/portaria/salas'],
+        ['Itens', '/portaria/itens'],
         ['Salas Hoje', '/portaria/salas-hoje'],
         ['Histórico', '/portaria/historico'],
+        ['Imprimir Movimentações', '/portaria/relatorio-movimentacoes'],
     ],
     'Professor' => [
         ['Professor', '/professor'],
@@ -84,7 +87,12 @@ $nav = [
         ['Serviços Gerais', '/servicos-gerais'],
         ['Retiradas', '/servicos-gerais/retiradas'],
     ],
+    'Técnico' => [
+        ['Salas', '/portaria/salas'],
+        ['Itens', '/portaria/itens'],
+    ],
 ];
+$nav['Tecnico'] = $nav['Técnico'];
 $developerGroups = [
     'Técnico' => $nav['Desenvolvedor'],
     'Administrativo' => $nav['Administrativo'],
@@ -101,7 +109,16 @@ $developerGroups = [
     'Serviços Gerais' => $nav['Serviços Gerais'],
 ];
 $items = $nav[$profile] ?? [];
-if ($user && !isDeveloper() && (new \App\Models\PermissaoSala())->usuarioTemAlgumAcesso((int) $user['id'])) {
+$calendarItem = ['Calendário', '/calendario-salas'];
+if (!in_array('/calendario-salas', array_column($items, 1), true)) {
+    $items[] = $calendarItem;
+}
+if (
+    $user
+    && !isDeveloper()
+    && comparableProfile((string) $profile) === comparableProfile('Aluno')
+    && (new \App\Models\PermissaoSala())->usuarioTemChaveAtribuida((int) $user['id'])
+) {
     $temRetirada = false;
     foreach ($items as $item) {
         if (in_array($item[1], ['/administrativo/retiradas', '/diretor/chaves', '/secretario/retirada-chaves', '/professor/retiradas', '/bolsista/retiradas', '/visitante/chave', '/motorista/retiradas', '/servicos-gerais/retiradas', '/retiradas-autorizadas'], true)) {
@@ -230,6 +247,7 @@ $iconPaths = [
     'log-out' => '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>',
     'menu' => '<path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/>',
     'presentation' => '<path d="M2 3h20"/><path d="M21 3v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3"/><path d="m7 21 5-5 5 5"/>',
+    'printer' => '<path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/><path d="M18 12h.01"/>',
     'search' => '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/><path d="m8.5 11 2 2 4-4"/>',
     'shield' => '<path d="M20 13c0 5-3.5 7.5-8 9-4.5-1.5-8-4-8-9V5l8-3 8 3v8Z"/><path d="m9 12 2 2 4-4"/>',
     'swap' => '<path d="M17 3l4 4-4 4"/><path d="M21 7H7"/><path d="M7 21l-4-4 4-4"/><path d="M3 17h14"/>',
@@ -248,21 +266,23 @@ $iconForPath = static function (string $path): string {
         '/desenvolvedor/advertencias' => 'alert',
         '/administrativo' => 'briefcase',
         '/administrativo/reservas-salas', '/diretor/reservas', '/secretario/reservas-curso', '/professor/reservas-salas', '/coordenador/reservas-aulas', '/portaria/reservas' => 'calendar',
+        '/calendario-salas' => 'calendar-days',
         '/administrativo/retiradas', '/administrativo/chaves-autorizadas', '/diretor/chaves', '/secretario/retirada-chaves', '/professor/retiradas', '/bolsista/retiradas', '/visitante/chave', '/motorista/retiradas', '/servicos-gerais/retiradas', '/retiradas-autorizadas' => 'key',
         '/administrativo/disponibilidade-salas', '/diretor/disponibilidade', '/professor/disponibilidade-salas', '/aluno/consulta-salas', '/motorista' => 'search',
         '/diretor' => 'building',
-        '/diretor/movimentacoes' => 'swap',
+        '/diretor/movimentacoes', '/diretor/relatorios' => 'history',
         '/secretario' => 'clipboard',
         '/secretario/cursos' => 'graduation',
         '/secretario/periodos-academicos' => 'calendar-days',
         '/professor/orientandos-bolsistas' => 'user-check',
-        '/administrativo/salas', '/portaria/salas-hoje' => 'door',
-        '/administrativo/itens' => 'box',
+        '/portaria/salas', '/portaria/salas-hoje' => 'door',
+        '/portaria/itens' => 'box',
         '/coordenador', '/coordenador/materias', '/professor/aulas-semestre' => 'book',
         '/portaria' => 'shield',
         '/portaria/permissoes' => 'shield',
         '/portaria/visitantes', '/visitante' => 'user',
         '/portaria/historico' => 'history',
+        '/portaria/relatorio-movimentacoes' => 'printer',
         '/professor' => 'presentation',
         '/bolsista', '/aluno' => 'graduation',
         '/servicos-gerais' => 'wrench',
@@ -300,7 +320,7 @@ $navIcon = static function (string $icon, string $class = 'nav-icon') use ($icon
     <link rel="stylesheet" href="<?= e(assetUrl('css/app.css')) ?>">
     <link rel="stylesheet" href="<?= e(assetUrl('css/guide.css')) ?>">
 </head>
-<body>
+<body class="<?= comparableProfile($profile) === comparableProfile('Agente de Portaria') ? 'low-vision-ui' : '' ?>">
     <header class="topbar">
         <div class="topbar__brand">
             <a class="topbar__home" href="<?= e(baseUrl(moduleForProfile($profile))) ?>" aria-label="Início do SGRP" data-guide-home>
@@ -327,6 +347,7 @@ $navIcon = static function (string $icon, string $class = 'nav-icon') use ($icon
     </header>
     <nav class="admin-nav" id="admin-nav" data-admin-nav>
         <?php if ($profile === 'Desenvolvedor'): ?>
+            <a href="<?= e(baseUrl($calendarItem[1])) ?>" data-guide-path="<?= e($calendarItem[1]) ?>"><?= $navIcon($iconForPath($calendarItem[1])) ?><span><?= e($calendarItem[0]) ?></span></a>
             <?php foreach ($developerGroups as $groupName => $groupItems): ?>
                 <div class="nav-group">
                     <button class="nav-group__button" type="button"><?= $navIcon($iconForGroup($groupName)) ?><span><?= e($groupName) ?></span></button>

@@ -126,11 +126,6 @@ class SecretarioController extends Controller
         redirect('/secretario/bolsistas');
     }
 
-    public function salas(): void { requireProfile('SecretÃ¡rio de Curso'); $this->view('secretario/salas', ['title' => 'Salas', 'salas' => (new Sala())->all('nome')]); }
-    public function salvarSala(): void { requireProfile('SecretÃ¡rio de Curso'); verifyCsrf(); (new Sala())->create($this->salaData()); flash('success', 'Sala cadastrada.'); redirect('/secretario/salas'); }
-    public function atualizarSala(): void { requireProfile('SecretÃ¡rio de Curso'); verifyCsrf(); (new Sala())->update((int) $_POST['id'], $this->salaData()); flash('success', 'Sala atualizada.'); redirect('/secretario/salas'); }
-    public function excluirSala(): void { requireProfile('SecretÃ¡rio de Curso'); verifyCsrf(); try { (new Sala())->delete((int) $_POST['id']); } catch (\Throwable) { (new Sala())->update((int) $_POST['id'], ['situacao' => 'bloqueada']); } flash('success', 'Sala removida ou bloqueada.'); redirect('/secretario/salas'); }
-
     public function chavesAutorizadas(): void
     {
         requireProfile('SecretÃ¡rio de Curso');
@@ -146,16 +141,9 @@ class SecretarioController extends Controller
         $this->view('secretario/retirada-chaves', ['title' => 'Retirada de Chaves e Itens', 'salas' => (new Sala())->chavesParaRetirada(currentUser()), 'itens' => (new ItemPortaria())->disponiveisParaRetirada()]);
     }
 
-    public function itens(): void { requireProfile('SecretÃ¡rio de Curso'); $this->view('secretario/itens', ['title' => 'Itens', 'itens' => (new ItemPortaria())->all('nome')]); }
-    public function salvarItem(): void { requireProfile('SecretÃ¡rio de Curso'); verifyCsrf(); (new ItemPortaria())->create($this->itemData()); flash('success', 'Item cadastrado.'); redirect('/secretario/itens'); }
-    public function atualizarItem(): void { requireProfile('SecretÃ¡rio de Curso'); verifyCsrf(); (new ItemPortaria())->update((int) $_POST['id'], $this->itemData()); flash('success', 'Item atualizado.'); redirect('/secretario/itens'); }
-    public function excluirItem(): void { requireProfile('SecretÃ¡rio de Curso'); verifyCsrf(); try { (new ItemPortaria())->delete((int) $_POST['id']); } catch (\Throwable) { (new ItemPortaria())->update((int) $_POST['id'], ['situacao' => 'indisponivel']); } flash('success', 'Item removido ou indisponibilizado.'); redirect('/secretario/itens'); }
-
     private function periodoData(): array { return ['nome' => trim((string) $_POST['nome']), 'data_inicio' => $_POST['data_inicio'], 'data_fim' => $_POST['data_fim'], 'situacao' => $_POST['situacao'] ?? 'ativo']; }
     private function cursoData(): array { return ['nome' => trim((string) $_POST['nome']), 'codigo' => $_POST['codigo'] ?: null, 'situacao' => $_POST['situacao'] ?? 'ativo']; }
-    private function salaData(): array { return ['nome' => trim((string) $_POST['nome']), 'codigo' => $_POST['codigo'] ?: null, 'bloco' => $_POST['bloco'] ?: null, 'capacidade' => $_POST['capacidade'] !== '' ? (int) $_POST['capacidade'] : null, 'tipo_ambiente' => $_POST['tipo_ambiente'], 'situacao' => $_POST['situacao'] ?? 'disponivel', 'descricao' => $_POST['descricao'] ?? null]; }
-    private function itemData(): array { return ['nome' => trim((string) $_POST['nome']), 'codigo' => $_POST['codigo'] ?: null, 'categoria' => $_POST['categoria'] ?: null, 'quantidade' => max(0, (int) ($_POST['quantidade'] ?? 1)), 'situacao' => $_POST['situacao'] ?? 'disponivel', 'descricao' => $_POST['descricao'] ?? null]; }
-    private function permissaoData(): array { return ['usuario_id' => (int) $_POST['usuario_id'], 'sala_id' => !empty($_POST['acesso_total']) ? null : (int) $_POST['sala_id'], 'acesso_total' => !empty($_POST['acesso_total']) ? 1 : 0, 'autorizado_por' => currentUser()['id'], 'inicio_autorizacao' => $_POST['inicio_autorizacao'] ?: null, 'expira_em' => !empty($_POST['nunca_expirar']) ? null : ($_POST['expira_em'] ?: null), 'dias_semana' => !empty($_POST['dias_semana']) ? implode(', ', (array) $_POST['dias_semana']) : null, 'observacao' => $_POST['observacao'] ?? null, 'situacao' => $_POST['situacao'] ?? 'ativa']; }
+    private function permissaoData(): array { return ['usuario_id' => (int) $_POST['usuario_id'], 'sala_id' => !empty($_POST['acesso_total']) ? null : (int) $_POST['sala_id'], 'acesso_total' => !empty($_POST['acesso_total']) ? 1 : 0, 'autorizado_por' => currentUser()['id'], 'inicio_autorizacao' => \databaseDateTimeFromInput((string) ($_POST['inicio_autorizacao'] ?? '')), 'expira_em' => !empty($_POST['nunca_expirar']) ? null : \databaseDateTimeFromInput((string) ($_POST['expira_em'] ?? '')), 'dias_semana' => !empty($_POST['dias_semana']) ? implode(', ', (array) $_POST['dias_semana']) : null, 'observacao' => $_POST['observacao'] ?? null, 'situacao' => $_POST['situacao'] ?? 'ativa']; }
 
     private function validarPeriodo(): void
     {
@@ -258,11 +246,7 @@ class SecretarioController extends Controller
 
     private function criarDataHora(string $valor): ?\DateTimeImmutable
     {
-        if ($valor === '') {
-            return null;
-        }
-        $data = \DateTimeImmutable::createFromFormat('Y-m-d\TH:i', $valor);
-        return $data instanceof \DateTimeImmutable ? $data : null;
+        return \parseDateTimeInput($valor);
     }
 }
 

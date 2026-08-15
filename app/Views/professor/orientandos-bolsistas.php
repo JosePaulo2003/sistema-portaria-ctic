@@ -45,10 +45,10 @@
             </select>
         </label>
         <label>Inicio
-            <input type="datetime-local" name="inicio_autorizacao">
+            <input type="text" name="inicio_autorizacao" data-date-br="datetime" placeholder="dd/mm/aaaa hh:mm" inputmode="numeric" maxlength="16" pattern="\d{2}/\d{2}/\d{4}\s\d{2}:\d{2}" title="Use o formato dd/mm/aaaa hh:mm" autocomplete="off">
         </label>
         <label>Expira em
-            <input type="datetime-local" name="expira_em">
+            <input type="text" name="expira_em" data-date-br="datetime" placeholder="dd/mm/aaaa hh:mm" inputmode="numeric" maxlength="16" pattern="\d{2}/\d{2}/\d{4}\s\d{2}:\d{2}" title="Use o formato dd/mm/aaaa hh:mm" autocomplete="off">
         </label>
         <details class="days-picker full" data-days-picker>
             <summary class="days-picker__summary">
@@ -143,7 +143,7 @@
                     <td><?= e($p['usuario_nome'] ?? '-') ?></td>
                     <td><?= e($p['sala_nome'] ?? '-') ?></td>
                     <td><?= e($p['dias_semana'] ?: 'Todos os dias') ?></td>
-                    <td><?= e(!empty($p['expira_em']) ? date('d/m/Y H:i', strtotime($p['expira_em'])) : 'Sem expiracao') ?></td>
+                    <td><?= e(formatDateTimeBr($p['expira_em'] ?? null, 'Sem expiracao')) ?></td>
                     <td><span class="status-badge"><?= e($p['situacao']) ?></span></td>
                 </tr>
             <?php endforeach; ?>

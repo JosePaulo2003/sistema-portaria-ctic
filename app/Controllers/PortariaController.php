@@ -8,6 +8,7 @@ use App\Core\Database;
 use App\Models\AdvertenciaChave;
 use App\Models\BloqueioChave;
 use App\Models\ConfiguracaoSistema;
+use App\Models\ItemPortaria;
 use App\Models\Movimentacao;
 use App\Models\PermissaoItem;
 use App\Models\PermissaoSala;
@@ -21,6 +22,96 @@ class PortariaController extends Controller
     public function index(): void
     {
         $this->salasHome('Agente de Portaria');
+    }
+
+    public function salas(): void
+    {
+        $this->exigirGestaoSalasItens();
+        $this->view('secretario/salas', [
+            'title' => 'Salas',
+            'salas' => (new Sala())->all('nome'),
+            'actionPrefix' => '/portaria/salas',
+        ]);
+    }
+
+    public function salvarSala(): void
+    {
+        $this->exigirGestaoSalasItens();
+        verifyCsrf();
+        (new Sala())->create($this->salaData());
+        audit('Salas', 'criacao', 'Sala cadastrada pela Portaria ou pelo perfil Tecnico.');
+        flash('success', 'Sala cadastrada.');
+        redirect('/portaria/salas');
+    }
+
+    public function atualizarSala(): void
+    {
+        $this->exigirGestaoSalasItens();
+        verifyCsrf();
+        (new Sala())->update((int) $_POST['id'], $this->salaData());
+        audit('Salas', 'atualizacao', 'Sala atualizada pela Portaria ou pelo perfil Tecnico.', ['sala_id' => (int) $_POST['id']]);
+        flash('success', 'Sala atualizada.');
+        redirect('/portaria/salas');
+    }
+
+    public function excluirSala(): void
+    {
+        $this->exigirGestaoSalasItens();
+        verifyCsrf();
+        $salaId = (int) $_POST['id'];
+        try {
+            (new Sala())->delete($salaId);
+        } catch (\Throwable) {
+            (new Sala())->update($salaId, ['situacao' => 'bloqueada']);
+        }
+        audit('Salas', 'exclusao_ou_bloqueio', 'Sala removida ou bloqueada pela Portaria ou pelo perfil Tecnico.', ['sala_id' => $salaId]);
+        flash('success', 'Sala removida ou bloqueada.');
+        redirect('/portaria/salas');
+    }
+
+    public function itens(): void
+    {
+        $this->exigirGestaoSalasItens();
+        $this->view('secretario/itens', [
+            'title' => 'Itens',
+            'itens' => (new ItemPortaria())->all('nome'),
+            'actionPrefix' => '/portaria/itens',
+        ]);
+    }
+
+    public function salvarItem(): void
+    {
+        $this->exigirGestaoSalasItens();
+        verifyCsrf();
+        (new ItemPortaria())->create($this->itemData());
+        audit('Itens', 'criacao', 'Item cadastrado pela Portaria ou pelo perfil Tecnico.');
+        flash('success', 'Item cadastrado.');
+        redirect('/portaria/itens');
+    }
+
+    public function atualizarItem(): void
+    {
+        $this->exigirGestaoSalasItens();
+        verifyCsrf();
+        (new ItemPortaria())->update((int) $_POST['id'], $this->itemData());
+        audit('Itens', 'atualizacao', 'Item atualizado pela Portaria ou pelo perfil Tecnico.', ['item_id' => (int) $_POST['id']]);
+        flash('success', 'Item atualizado.');
+        redirect('/portaria/itens');
+    }
+
+    public function excluirItem(): void
+    {
+        $this->exigirGestaoSalasItens();
+        verifyCsrf();
+        $itemId = (int) $_POST['id'];
+        try {
+            (new ItemPortaria())->delete($itemId);
+        } catch (\Throwable) {
+            (new ItemPortaria())->update($itemId, ['situacao' => 'indisponivel']);
+        }
+        audit('Itens', 'exclusao_ou_indisponibilidade', 'Item removido ou indisponibilizado pela Portaria ou pelo perfil Tecnico.', ['item_id' => $itemId]);
+        flash('success', 'Item removido ou indisponibilizado.');
+        redirect('/portaria/itens');
     }
 
     public function retiradas(): void
@@ -45,6 +136,11 @@ class PortariaController extends Controller
 
         if (!$usuario || ($usuario['situacao'] ?? '') !== 'ativo') {
             flash('error', 'Selecione um usuario ativo para registrar a retirada.');
+            redirect('/portaria/retiradas');
+        }
+        $bloqueio = (new BloqueioChave())->ativoParaUsuario($usuarioId);
+        if ($bloqueio) {
+            flash('error', 'Este usuario esta temporariamente bloqueado para retirar chaves ate ' . date('d/m/Y H:i', strtotime($bloqueio['fim_em'])) . '.');
             redirect('/portaria/retiradas');
         }
         if ($salaId <= 0 || !(new Sala())->chavePodeSerRetirada($salaId, currentUser())) {
@@ -90,12 +186,19 @@ class PortariaController extends Controller
     public function permissoes(): void
     {
         requireProfile('Agente de Portaria');
+        $usuarioId = max(0, (int) ($_GET['usuario_id'] ?? 0));
+        $editarId = max(0, (int) ($_GET['editar_id'] ?? 0));
+        $permissaoModel = new PermissaoSala();
+        $userModel = new User();
+        $userModel->purgeExpiredVisitors();
         $this->view('portaria/permissoes', [
             'title' => 'Permissões',
-            'permissoesSalas' => (new PermissaoSala())->withDetails(),
-            'permissoesItens' => (new PermissaoItem())->withDetails(),
-            'usuarios' => (new User())->allWithProfile(),
+            'permissoesSalas' => $permissaoModel->withDetails($usuarioId ?: null),
+            'permissoesItens' => (new PermissaoItem())->withDetails($usuarioId ?: null),
+            'usuarios' => $userModel->allWithProfile(),
             'salas' => (new Sala())->all('nome'),
+            'usuarioFiltro' => $usuarioId,
+            'permissaoEdicao' => $editarId > 0 ? $permissaoModel->findWithDetails($editarId) : null,
         ]);
     }
 
@@ -105,58 +208,172 @@ class PortariaController extends Controller
         verifyCsrf();
 
         $usuarioId = (int) ($_POST['usuario_id'] ?? 0);
-        $salaId = (int) ($_POST['sala_id'] ?? 0);
+        $salaIds = array_values(array_unique(array_filter(
+            array_map('intval', (array) ($_POST['sala_ids'] ?? [])),
+            static fn (int $salaId): bool => $salaId > 0
+        )));
         $acessoTotal = !empty($_POST['acesso_total']);
+        $nuncaExpirar = !empty($_POST['nunca_expirar']);
         $usuario = (new User())->find($usuarioId);
 
         if (!$usuario || ($usuario['situacao'] ?? '') !== 'ativo') {
             flash('error', 'Selecione um usuario ativo.');
             redirect('/portaria/permissoes');
         }
-        if (!$acessoTotal && $salaId <= 0) {
-            flash('error', 'Selecione uma chave ou marque acesso total.');
+        if (!$acessoTotal && !$salaIds) {
+            flash('error', 'Selecione pelo menos uma chave ou marque acesso total.');
             redirect('/portaria/permissoes');
         }
+        $salasValidas = [];
+        if (!$acessoTotal) {
+            $salaModel = new Sala();
+            foreach ($salaIds as $salaId) {
+                if (!$salaModel->find($salaId)) {
+                    flash('error', 'Uma das chaves selecionadas nao e valida.');
+                    redirect('/portaria/permissoes');
+                }
+                $salasValidas[] = $salaId;
+            }
+        }
 
-        $inicio = $this->criarDataHora((string) ($_POST['inicio_autorizacao'] ?? ''));
-        $expira = $this->criarDataHora((string) ($_POST['expira_em'] ?? ''));
-        // A permissao da Portaria sempre tem janela de validade.
+        $inicio = $this->criarDataHoraPermissao('inicio_autorizacao');
+        $expira = $nuncaExpirar ? null : $this->criarDataHoraPermissao('expira_em');
         if (!$inicio) {
             flash('error', 'Informe um inicio de autorizacao valido.');
             redirect('/portaria/permissoes');
         }
-        if (!$expira) {
+        if (!$nuncaExpirar && !$expira) {
             flash('error', 'Informe uma data de expiracao valida.');
             redirect('/portaria/permissoes');
         }
-        if ($inicio < new \DateTimeImmutable() || $expira < new \DateTimeImmutable()) {
-            flash('error', 'A autorizacao precisa usar data e horario futuros.');
+        if ($expira && $expira <= new \DateTimeImmutable()) {
+            flash('error', 'A expiracao da autorizacao precisa estar no futuro.');
             redirect('/portaria/permissoes');
         }
-        if ($inicio && $expira && $expira < $inicio) {
+        if ($expira && $expira < $inicio) {
             flash('error', 'A expiracao nao pode ser anterior ao inicio.');
             redirect('/portaria/permissoes');
         }
+        $this->validarLimitePermissaoUsuario($usuario, $expira, '/portaria/permissoes');
 
-        (new PermissaoSala())->create([
-            'usuario_id' => $usuarioId,
-            'sala_id' => $acessoTotal ? null : $salaId,
-            'acesso_total' => $acessoTotal ? 1 : 0,
-            'autorizado_por' => currentUser()['id'],
-            'inicio_autorizacao' => $_POST['inicio_autorizacao'] ?: null,
-            'expira_em' => $_POST['expira_em'] ?: null,
-            'dias_semana' => !empty($_POST['dias_semana']) ? implode(', ', (array) $_POST['dias_semana']) : null,
-            'observacao' => $_POST['observacao'] ?? null,
-            'situacao' => 'ativa',
-        ]);
+        $salasParaCadastrar = $acessoTotal ? [null] : $salasValidas;
+        $permissaoModel = new PermissaoSala();
+        $pdo = Database::pdo();
+        $pdo->beginTransaction();
+        try {
+            foreach ($salasParaCadastrar as $salaId) {
+                $permissaoModel->create([
+                    'usuario_id' => $usuarioId,
+                    'sala_id' => $salaId,
+                    'acesso_total' => $acessoTotal ? 1 : 0,
+                    'autorizado_por' => currentUser()['id'],
+                    'inicio_autorizacao' => $inicio->format('Y-m-d H:i:s'),
+                    'expira_em' => $expira?->format('Y-m-d H:i:s'),
+                    'dias_semana' => !empty($_POST['dias_semana']) ? implode(', ', (array) $_POST['dias_semana']) : null,
+                    'observacao' => $_POST['observacao'] ?? null,
+                    'situacao' => 'ativa',
+                ]);
+            }
+            $pdo->commit();
+        } catch (\Throwable $exception) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            systemLog('error', 'Portaria', 'Falha ao cadastrar permissoes de varias salas.', [
+                'usuario_id' => $usuarioId,
+                'salas_ids' => $salasValidas,
+                'erro' => $exception->getMessage(),
+            ]);
+            flash('error', 'Nao foi possivel cadastrar as permissoes. Nenhuma alteracao foi salva.');
+            redirect('/portaria/permissoes');
+        }
 
         audit('Portaria', 'permissao_chave', 'Permissao de chave cadastrada pela portaria.', [
             'usuario_id' => $usuarioId,
-            'sala_id' => $acessoTotal ? null : $salaId,
+            'salas_ids' => $acessoTotal ? [] : $salasValidas,
+            'quantidade_permissoes' => count($salasParaCadastrar),
             'acesso_total' => $acessoTotal,
+            'nunca_expirar' => $nuncaExpirar,
         ]);
-        flash('success', 'Permissao de chave cadastrada.');
+        flash('success', count($salasParaCadastrar) > 1
+            ? count($salasParaCadastrar) . ' permissoes de chave cadastradas.'
+            : 'Permissao de chave cadastrada.');
         redirect('/portaria/permissoes');
+    }
+
+    public function atualizarPermissaoChave(): void
+    {
+        requireProfile('Agente de Portaria');
+        verifyCsrf();
+
+        $permissaoId = (int) ($_POST['id'] ?? 0);
+        $permissaoModel = new PermissaoSala();
+        $permissaoAtual = $permissaoModel->find($permissaoId);
+        if (!$permissaoAtual) {
+            flash('error', 'Permissao nao encontrada.');
+            redirect('/portaria/permissoes');
+        }
+
+        // Uma permissao em edicao continua pertencendo ao usuario original.
+        $usuarioId = (int) $permissaoAtual['usuario_id'];
+        $salaId = (int) ($_POST['sala_id'] ?? 0);
+        $acessoTotal = !empty($_POST['acesso_total']);
+        $nuncaExpirar = !empty($_POST['nunca_expirar']);
+        $usuario = (new User())->find($usuarioId);
+        if (!$usuario || ($usuario['situacao'] ?? '') !== 'ativo') {
+            flash('error', 'Selecione um usuario ativo.');
+            redirect('/portaria/permissoes?editar_id=' . $permissaoId);
+        }
+        if (!$acessoTotal && ($salaId <= 0 || !(new Sala())->find($salaId))) {
+            flash('error', 'Selecione uma chave valida ou marque acesso total.');
+            redirect('/portaria/permissoes?editar_id=' . $permissaoId);
+        }
+
+        $inicio = $this->criarDataHoraPermissao('inicio_autorizacao');
+        $expira = $nuncaExpirar ? null : $this->criarDataHoraPermissao('expira_em');
+        if (!$inicio || (!$nuncaExpirar && !$expira)) {
+            flash('error', 'Informe inicio e expiracao validos ou marque Nunca expirar.');
+            redirect('/portaria/permissoes?editar_id=' . $permissaoId);
+        }
+        if ($expira && $expira < new \DateTimeImmutable()) {
+            flash('error', 'A expiracao da permissao precisa estar no futuro.');
+            redirect('/portaria/permissoes?editar_id=' . $permissaoId);
+        }
+        if ($expira && $expira < $inicio) {
+            flash('error', 'A expiracao nao pode ser anterior ao inicio.');
+            redirect('/portaria/permissoes?editar_id=' . $permissaoId);
+        }
+        $this->validarLimitePermissaoUsuario($usuario, $expira, '/portaria/permissoes?editar_id=' . $permissaoId);
+
+        $situacao = (string) ($_POST['situacao'] ?? 'ativa');
+        if (!in_array($situacao, ['ativa', 'revogada', 'expirada'], true)) {
+            $situacao = 'ativa';
+        }
+
+        if ($situacao === 'revogada') {
+            $permissaoDetalhada = $permissaoModel->findWithDetails($permissaoId) ?? $permissaoAtual;
+            $this->registrarAuditoriaRevogacaoPermissao($permissaoDetalhada, 'edicao');
+            $permissaoModel->delete($permissaoId);
+            flash('success', 'Permissao revogada e removida da lista.');
+            redirect('/portaria/permissoes?usuario_id=' . $usuarioId);
+        }
+
+        $permissaoModel->update($permissaoId, [
+            'usuario_id' => $usuarioId,
+            'sala_id' => $acessoTotal ? null : $salaId,
+            'acesso_total' => $acessoTotal ? 1 : 0,
+            'inicio_autorizacao' => $inicio->format('Y-m-d H:i:s'),
+            'expira_em' => $expira?->format('Y-m-d H:i:s'),
+            'dias_semana' => !empty($_POST['dias_semana']) ? implode(', ', (array) $_POST['dias_semana']) : null,
+            'observacao' => $_POST['observacao'] ?? null,
+            'situacao' => $situacao,
+        ]);
+        audit('Portaria', 'permissao_chave_atualizada', 'Permissao de chave atualizada pela portaria.', [
+            'permissao_id' => $permissaoId,
+            'usuario_id' => $usuarioId,
+        ]);
+        flash('success', 'Permissao atualizada.');
+        redirect('/portaria/permissoes?usuario_id=' . $usuarioId);
     }
 
     public function revogarPermissaoChave(): void
@@ -165,17 +382,62 @@ class PortariaController extends Controller
         verifyCsrf();
 
         $permissaoId = (int) ($_POST['id'] ?? 0);
-        if (!(new PermissaoSala())->find($permissaoId)) {
+        $permissaoModel = new PermissaoSala();
+        $permissao = $permissaoModel->findWithDetails($permissaoId);
+        if (!$permissao) {
             flash('error', 'Permissao nao encontrada.');
             redirect('/portaria/permissoes');
         }
 
-        (new PermissaoSala())->update($permissaoId, ['situacao' => 'revogada']);
-        audit('Portaria', 'permissao_chave_revogada', 'Permissao de chave revogada pela portaria.', [
-            'permissao_id' => $permissaoId,
+        $usuarioId = (int) ($permissao['usuario_id'] ?? 0);
+        $this->registrarAuditoriaRevogacaoPermissao($permissao, 'botao_revogar');
+        $permissaoModel->delete($permissaoId);
+
+        flash('success', 'Permissao revogada e removida da lista.');
+        redirect('/portaria/permissoes' . ($usuarioId > 0 ? '?usuario_id=' . $usuarioId : ''));
+    }
+
+    public function limparPermissoesRevogadas(): void
+    {
+        requireProfile('Agente de Portaria');
+        verifyCsrf();
+
+        $usuarioId = max(0, (int) ($_POST['usuario_id'] ?? 0));
+        $quantidade = (new PermissaoSala())->excluirRevogadas($usuarioId ?: null);
+
+        audit('Portaria', 'permissoes_chaves_revogadas_limpas', 'Permissoes de chave revogadas removidas pela portaria.', [
+            'usuario_id' => $usuarioId ?: null,
+            'quantidade' => $quantidade,
         ]);
-        flash('success', 'Permissao revogada.');
-        redirect('/portaria/permissoes');
+
+        flash(
+            'success',
+            $quantidade === 1
+                ? '1 permissao revogada foi removida.'
+                : $quantidade . ' permissoes revogadas foram removidas.'
+        );
+
+        redirect('/portaria/permissoes' . ($usuarioId > 0 ? '?usuario_id=' . $usuarioId : ''));
+    }
+
+    private function registrarAuditoriaRevogacaoPermissao(array $permissao, string $origem): void
+    {
+        audit('Portaria', 'permissao_chave_revogada', 'Permissao de chave revogada e removida da lista pela portaria.', [
+            'permissao_id' => (int) ($permissao['id'] ?? 0),
+            'usuario_id' => (int) ($permissao['usuario_id'] ?? 0),
+            'usuario_nome' => $permissao['usuario_nome'] ?? null,
+            'sala_id' => isset($permissao['sala_id']) ? (int) $permissao['sala_id'] : null,
+            'sala_nome' => $permissao['sala_nome'] ?? null,
+            'acesso_total' => !empty($permissao['acesso_total']),
+            'inicio_autorizacao' => $permissao['inicio_autorizacao'] ?? null,
+            'expira_em' => $permissao['expira_em'] ?? null,
+            'dias_semana' => $permissao['dias_semana'] ?? null,
+            'observacao' => $permissao['observacao'] ?? null,
+            'autorizado_por' => isset($permissao['autorizado_por']) ? (int) $permissao['autorizado_por'] : null,
+            'autorizador_nome' => $permissao['autorizador_nome'] ?? null,
+            'criado_em' => $permissao['criado_em'] ?? null,
+            'origem_revogacao' => $origem,
+        ]);
     }
 
     public function vinculosBolsistas(): void
@@ -233,7 +495,7 @@ class PortariaController extends Controller
             'title' => 'Reservas',
             'reservas' => (new Reserva())->withDetails(),
             'salas' => (new Sala())->all('nome'),
-            'usuarios' => (new User())->all('nome'),
+            'usuarios' => (new User())->ativosComPermissaoSolicitarReserva(),
         ]);
     }
 
@@ -275,6 +537,8 @@ class PortariaController extends Controller
 
         audit('Reservas', 'criacao_portaria', 'Reserva cadastrada pela portaria.', [
             'quantidade' => count($ocorrencias),
+            'usuario_solicitante_id' => $usuarioId > 0 ? $usuarioId : null,
+            'solicitante_nome_manual' => $usuarioId > 0 ? null : $solicitanteManual,
         ]);
         flash('success', count($ocorrencias) === 1 ? 'Reserva cadastrada e confirmada.' : count($ocorrencias) . ' reservas cadastradas e confirmadas.');
         redirect('/portaria/reservas');
@@ -332,7 +596,7 @@ class PortariaController extends Controller
         $fim = $this->criarDataHora((string) ($_POST['fim_em'] ?? ''));
         $salaId = (int) ($_POST['sala_id'] ?? 0);
         $usuarioId = (int) ($_POST['usuario_id'] ?? 0);
-        $solicitanteManual = mb_substr(trim((string) ($_POST['solicitante_nome_manual'] ?? '')), 0, 180);
+        $solicitanteManual = trim((string) ($_POST['solicitante_nome_manual'] ?? ''));
         $recorrenciaFim = trim((string) ($_POST['recorrencia_fim'] ?? ''));
         $diasSemana = $this->diasSemanaSelecionados((array) ($_POST['dias_semana'] ?? []));
 
@@ -341,15 +605,12 @@ class PortariaController extends Controller
             redirect('/portaria/reservas');
         }
         if ($usuarioId <= 0 && $solicitanteManual === '') {
-            flash('error', 'Informe um usuario cadastrado ou escreva o nome do solicitante.');
+            flash('error', 'Selecione um solicitante autorizado ou informe o nome da pessoa sem cadastro.');
             redirect('/portaria/reservas');
         }
-        if ($usuarioId > 0) {
-            $usuario = (new User())->find($usuarioId);
-            if (!$usuario || ($usuario['situacao'] ?? '') !== 'ativo') {
-                flash('error', 'Selecione um usuario ativo para a reserva.');
-                redirect('/portaria/reservas');
-            }
+        if ($usuarioId > 0 && !(new User())->podeSolicitarReserva($usuarioId)) {
+            flash('error', 'Selecione um usuario ativo com permissao para solicitar reserva.');
+            redirect('/portaria/reservas');
         }
         if ($inicio < new \DateTimeImmutable()) {
             flash('error', 'Nao e possivel cadastrar reserva com data ou horario anterior ao momento atual.');
@@ -421,8 +682,26 @@ class PortariaController extends Controller
 
     private function criarDataHora(string $valor): ?\DateTimeImmutable
     {
-        $data = \DateTimeImmutable::createFromFormat('Y-m-d\TH:i', $valor);
-        return $data instanceof \DateTimeImmutable ? $data : null;
+        return \parseDateTimeInput($valor);
+    }
+
+    private function criarDataHoraPermissao(string $prefixo): ?\DateTimeImmutable
+    {
+        $data = trim((string) ($_POST[$prefixo . '_data'] ?? ''));
+        $horaTexto = trim((string) ($_POST[$prefixo . '_hora'] ?? ''));
+        $minutoTexto = trim((string) ($_POST[$prefixo . '_minuto'] ?? ''));
+
+        if (!ctype_digit($horaTexto) || !ctype_digit($minutoTexto)) {
+            return null;
+        }
+
+        $hora = (int) $horaTexto;
+        $minuto = (int) $minutoTexto;
+        if ($hora < 0 || $hora > 23 || $minuto < 0 || $minuto > 59) {
+            return null;
+        }
+
+        return \parseDateTimeInput(sprintf('%s %02d:%02d', $data, $hora, $minuto));
     }
 
     private function diasSemanaSelecionados(array $dias): array
@@ -469,7 +748,9 @@ class PortariaController extends Controller
     public function visitantes(): void
     {
         requireProfile('Agente de Portaria');
-        $this->view('portaria/visitantes', ['title' => 'Visitantes', 'visitantes' => (new User())->byProfile('Visitante')]);
+        $user = new User();
+        $user->purgeExpiredVisitors();
+        $this->view('portaria/visitantes', ['title' => 'Visitantes', 'visitantes' => $user->temporaryVisitors()]);
     }
 
     public function salvarVisitante(): void
@@ -481,6 +762,7 @@ class PortariaController extends Controller
             flash('error', 'Informe uma senha inicial para o visitante.');
             redirect('/portaria/visitantes');
         }
+        $expira = $this->validarExpiracaoVisitante();
         $perfilId = \App\Core\Database::pdo()->query("SELECT id FROM perfis WHERE nome = 'Visitante'")->fetchColumn();
         (new User())->create([
             'nome' => trim((string) $_POST['nome']),
@@ -488,6 +770,7 @@ class PortariaController extends Controller
             'senha_hash' => password_hash($senha, PASSWORD_DEFAULT),
             'perfil_id' => (int) $perfilId,
             'situacao' => $_POST['situacao'] ?? 'ativo',
+            'acesso_expira_em' => $expira->format('Y-m-d H:i:s'),
         ]);
         flash('success', 'Visitante cadastrado.');
         redirect('/portaria/visitantes');
@@ -497,11 +780,18 @@ class PortariaController extends Controller
     {
         requireProfile('Agente de Portaria');
         verifyCsrf();
-        $data = ['nome' => trim((string) $_POST['nome']), 'email' => trim((string) $_POST['email']), 'situacao' => $_POST['situacao'] ?? 'ativo'];
+        $user = new User();
+        $visitanteId = (int) ($_POST['id'] ?? 0);
+        if (!$user->isVisitor($visitanteId)) {
+            flash('error', 'Visitante nao encontrado.');
+            redirect('/portaria/visitantes');
+        }
+        $expira = $this->validarExpiracaoVisitante();
+        $data = ['nome' => trim((string) $_POST['nome']), 'email' => trim((string) $_POST['email']), 'situacao' => $_POST['situacao'] ?? 'ativo', 'acesso_expira_em' => $expira->format('Y-m-d H:i:s')];
         if (!empty($_POST['senha'])) {
             $data['senha_hash'] = password_hash((string) $_POST['senha'], PASSWORD_DEFAULT);
         }
-        (new User())->update((int) $_POST['id'], $data);
+        $user->update($visitanteId, $data);
         flash('success', 'Visitante atualizado.');
         redirect('/portaria/visitantes');
     }
@@ -511,11 +801,34 @@ class PortariaController extends Controller
         requireProfile('Agente de Portaria');
         verifyCsrf();
         $user = new User();
-        if (!$user->deleteSafely((int) $_POST['id'])) {
-            $user->anonymize((int) $_POST['id']);
+        $visitanteId = (int) ($_POST['id'] ?? 0);
+        if (!$user->removeTemporaryVisitor($visitanteId)) {
+            flash('error', 'Visitante nao encontrado.');
+            redirect('/portaria/visitantes');
         }
         flash('success', 'Visitante removido.');
         redirect('/portaria/visitantes');
+    }
+
+    private function validarExpiracaoVisitante(): \DateTimeImmutable
+    {
+        $expira = $this->criarDataHora((string) ($_POST['acesso_expira_em'] ?? ''));
+        if (!$expira || $expira <= new \DateTimeImmutable()) {
+            flash('error', 'Informe uma data e hora futura para o fim do acesso temporario.');
+            redirect('/portaria/visitantes');
+        }
+        return $expira;
+    }
+
+    private function validarLimitePermissaoUsuario(array $usuario, ?\DateTimeImmutable $expira, string $retorno): void
+    {
+        $limiteAcesso = $this->criarDataHora((string) ($usuario['acesso_expira_em'] ?? ''));
+        if ($limiteAcesso && (!$expira || $expira > $limiteAcesso)) {
+            flash('error', $expira
+                ? 'A permissao nao pode expirar depois do acesso temporario do usuario.'
+                : 'Nunca expirar nao pode ser usado para uma conta temporaria.');
+            redirect($retorno);
+        }
     }
 
     public function salasHoje(): void
@@ -533,6 +846,87 @@ class PortariaController extends Controller
             'filtros' => $_GET,
         ]);
         return;
+    }
+
+    public function relatorioMovimentacoes(): void
+    {
+        requireProfile('Agente de Portaria');
+
+        $dataTexto = trim((string) ($_GET['data'] ?? date('Y-m-d')));
+        $data = \DateTimeImmutable::createFromFormat('!Y-m-d', $dataTexto);
+        if (!$data || $data->format('Y-m-d') !== $dataTexto) {
+            $data = new \DateTimeImmutable('today');
+            $dataTexto = $data->format('Y-m-d');
+        }
+
+        $validarHora = static function ($valor, string $padrao): string {
+            $hora = trim((string) $valor);
+            return preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d$/', $hora) ? $hora : $padrao;
+        };
+        $horaInicio = $validarHora($_GET['hora_inicio'] ?? '', '00:00');
+        $horaFim = $validarHora($_GET['hora_fim'] ?? '', '23:59');
+        $erroPeriodo = $horaInicio > $horaFim
+            ? 'A hora final precisa ser igual ou posterior à hora inicial.'
+            : '';
+
+        $salas = (new Sala())->all('nome');
+        $salaId = max(0, (int) ($_GET['sala_id'] ?? 0));
+        $salaSelecionada = null;
+        foreach ($salas as $sala) {
+            if ((int) $sala['id'] === $salaId) {
+                $salaSelecionada = $sala;
+                break;
+            }
+        }
+        if ($salaId > 0 && !$salaSelecionada) {
+            $salaId = 0;
+        }
+
+        $inicioPeriodo = $dataTexto . ' ' . $horaInicio . ':00';
+        $fimPeriodo = $dataTexto . ' ' . $horaFim . ':59';
+        $movimentacoes = $erroPeriodo === ''
+            ? (new Movimentacao())->relatorioSalasPortaria($inicioPeriodo, $fimPeriodo, $salaId > 0 ? $salaId : null)
+            : [];
+
+        $salasUnicas = [];
+        $usuariosUnicos = [];
+        $quantidadeAcoes = 0;
+        foreach ($movimentacoes as &$movimentacao) {
+            $acoes = [];
+            $retirada = (string) ($movimentacao['retirada_em'] ?? $movimentacao['criado_em'] ?? '');
+            $devolucao = (string) ($movimentacao['devolucao_real_em'] ?? '');
+            if ($retirada >= $inicioPeriodo && $retirada <= $fimPeriodo) {
+                $acoes[] = 'Retirada';
+            }
+            if ($devolucao !== '' && $devolucao >= $inicioPeriodo && $devolucao <= $fimPeriodo) {
+                $acoes[] = 'Devolução';
+            }
+            $movimentacao['acoes_periodo'] = $acoes ? implode(' e ', $acoes) : 'Movimentação registrada';
+            $quantidadeAcoes += max(1, count($acoes));
+            $salasUnicas[(int) $movimentacao['sala_id']] = true;
+            $usuariosUnicos[(int) $movimentacao['usuario_id']] = true;
+        }
+        unset($movimentacao);
+
+        $this->view('portaria/relatorio-movimentacoes', [
+            'title' => 'Relatório de Movimentações',
+            'filtros' => [
+                'data' => $dataTexto,
+                'hora_inicio' => $horaInicio,
+                'hora_fim' => $horaFim,
+                'sala_id' => $salaId,
+            ],
+            'erroPeriodo' => $erroPeriodo,
+            'salas' => $salas,
+            'salaSelecionadaNome' => $salaSelecionada['nome'] ?? 'Todas as salas',
+            'movimentacoes' => $movimentacoes,
+            'quantidadeAcoes' => $quantidadeAcoes,
+            'quantidadeSalas' => count($salasUnicas),
+            'quantidadeUsuarios' => count($usuariosUnicos),
+            'inicioPeriodo' => $inicioPeriodo,
+            'fimPeriodo' => $fimPeriodo,
+            'geradoEm' => date('Y-m-d H:i:s'),
+        ]);
     }
 
     private function devolver(string $tipoDevolucao): void
@@ -571,8 +965,52 @@ class PortariaController extends Controller
         flash('success', 'Devolução registrada.');
     }
 
+    private function exigirGestaoSalasItens(): void
+    {
+        requireProfile(['Agente de Portaria', 'Tecnico']);
+    }
+
+    private function salaData(): array
+    {
+        return [
+            'nome' => trim((string) ($_POST['nome'] ?? '')),
+            'codigo' => !empty($_POST['codigo']) ? trim((string) $_POST['codigo']) : null,
+            'bloco' => !empty($_POST['bloco']) ? trim((string) $_POST['bloco']) : null,
+            'capacidade' => ($_POST['capacidade'] ?? '') !== '' ? max(0, (int) $_POST['capacidade']) : null,
+            'tipo_ambiente' => $_POST['tipo_ambiente'] ?? 'institucional',
+            'situacao' => $_POST['situacao'] ?? 'disponivel',
+            'descricao' => !empty($_POST['descricao']) ? trim((string) $_POST['descricao']) : null,
+        ];
+    }
+
+    private function itemData(): array
+    {
+        return [
+            'nome' => trim((string) ($_POST['nome'] ?? '')),
+            'codigo' => !empty($_POST['codigo']) ? trim((string) $_POST['codigo']) : null,
+            'categoria' => !empty($_POST['categoria']) ? trim((string) $_POST['categoria']) : null,
+            'quantidade' => max(0, (int) ($_POST['quantidade'] ?? 1)),
+            'situacao' => $_POST['situacao'] ?? 'disponivel',
+            'descricao' => !empty($_POST['descricao']) ? trim((string) $_POST['descricao']) : null,
+        ];
+    }
+
     private function criarBloqueioSeNecessario(int $usuarioId): void
     {
+        $usuario = (new User())->findWithProfile($usuarioId);
+        if (!$usuario) {
+            return;
+        }
+
+        $perfil = comparableProfile((string) ($usuario['perfil_nome'] ?? ''));
+        $perfisBloqueaveis = [
+            comparableProfile('Aluno'),
+            comparableProfile('Aluno Bolsista'),
+        ];
+        if (!in_array($perfil, $perfisBloqueaveis, true)) {
+            return;
+        }
+
         $bloqueios = new BloqueioChave();
         if ($bloqueios->ativoParaUsuario($usuarioId)) {
             return;
