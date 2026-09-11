@@ -3,7 +3,7 @@
 </section>
 
 <form method="post" class="card form-grid">
-    <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
+    <?= csrfField() ?>
     <label>Sala
         <select name="sala_id" required>
             <?php foreach ($salas as $s): ?>
@@ -56,7 +56,7 @@
                     <td>
                         <?php if (($r['situacao'] ?? '') === 'pendente'): ?>
                             <form method="post" action="<?= e(baseUrl('/professor/reservas-salas/excluir')) ?>" class="inline-actions">
-                                <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
+                                <?= csrfField() ?>
                                 <input type="hidden" name="id" value="<?= e($r['id']) ?>">
                                 <button class="button button--danger" data-confirm="Excluir esta reserva?">Excluir</button>
                             </form>

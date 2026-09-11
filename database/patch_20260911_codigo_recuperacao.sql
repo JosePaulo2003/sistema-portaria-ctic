@@ -1,0 +1,2 @@
+ALTER TABLE recuperacoes_senha
+  ADD COLUMN IF NOT EXISTS tentativas TINYINT UNSIGNED NOT NULL DEFAULT 0 AFTER usado_em;

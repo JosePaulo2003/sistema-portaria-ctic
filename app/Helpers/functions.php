@@ -112,6 +112,26 @@ function notificationStackHtml(string $notifications): string
     return $notifications;
 }
 
+function withdrawalCodeNotice(): string
+{
+    $solicitacao = $_SESSION['_codigo_retirada'] ?? null;
+    unset($_SESSION['_codigo_retirada']);
+    if (!is_array($solicitacao) || empty($solicitacao['codigo'])) {
+        return '';
+    }
+
+    $codigo = e((string) $solicitacao['codigo']);
+    $sala = e((string) ($solicitacao['sala_nome'] ?? 'chave solicitada'));
+    $expira = e(formatDateTimeBr((string) ($solicitacao['expira_em'] ?? '')));
+
+    return '<section class="withdrawal-code-notice" role="status" aria-live="polite">'
+        . '<div><span class="withdrawal-code-notice__eyebrow">Senha temporária de retirada</span>'
+        . '<strong class="withdrawal-code-notice__code">' . $codigo . '</strong></div>'
+        . '<div><strong>Apresente esta senha ao agente de Portaria.</strong>'
+        . '<p>Chave: ' . $sala . '. Válida até ' . $expira . '. O agente comparará as duas telas e aceitará ou recusará a entrega.</p></div>'
+        . '</section>';
+}
+
 function appTimestamp(): string
 {
     return date('Y-m-d H:i:s');
@@ -234,7 +254,29 @@ function temporaryUserAccessExpired(?array $user): bool
 
 function authSessionFingerprint(): string
 {
-    return hash('sha256', ($_SERVER['HTTP_USER_AGENT'] ?? '') . '|' . ($_SERVER['REMOTE_ADDR'] ?? ''));
+    // O IP e o User-Agent mudam legitimamente em Wi-Fi, DHCP, proxy e após
+    // atualizações do navegador. A segurança da sessão fica a cargo do ID
+    // aleatório do PHP, do cookie HttpOnly/SameSite e da regeneração no login.
+    return hash('sha256', 'sgrp-auth-v2|' . session_id());
+}
+
+function refreshAuthSessionCookie(): void
+{
+    static $refreshed = false;
+    if ($refreshed || headers_sent() || session_status() !== PHP_SESSION_ACTIVE || session_id() === '') {
+        return;
+    }
+
+    $params = session_get_cookie_params();
+    setcookie(session_name(), session_id(), [
+        'expires' => time() + 315360000,
+        'path' => $params['path'] ?? '/',
+        'domain' => $params['domain'] ?? '',
+        'secure' => (bool) ($params['secure'] ?? false),
+        'httponly' => true,
+        'samesite' => $params['samesite'] ?? 'Lax',
+    ]);
+    $refreshed = true;
 }
 
 function clearAuthSession(): void
@@ -258,9 +300,16 @@ function authSessionIsValid(): bool
     $fingerprint = $_SESSION['_auth_fingerprint'] ?? '';
     $accessExpiresAt = (int) ($_SESSION['_auth_expires_at'] ?? 0);
 
-    if (!is_string($fingerprint) || !hash_equals($fingerprint, authSessionFingerprint())) {
+    if (!is_string($fingerprint) || $fingerprint === '') {
         clearAuthSession();
         return false;
+    }
+
+    // Migra silenciosamente as sessões antigas, vinculadas ao IP/User-Agent,
+    // para o identificador estável sem deslogar quem já está trabalhando.
+    $currentFingerprint = authSessionFingerprint();
+    if (!hash_equals($currentFingerprint, $fingerprint)) {
+        $_SESSION['_auth_fingerprint'] = $currentFingerprint;
     }
 
     if ($accessExpiresAt > 0 && $accessExpiresAt <= time()) {
@@ -268,6 +317,7 @@ function authSessionIsValid(): bool
         return false;
     }
 
+    refreshAuthSessionCookie();
     return true;
 }
 

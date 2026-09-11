@@ -3,7 +3,7 @@
     <p><?= e($user['perfil_nome'] ?? '') ?></p>
 </section>
 <form method="post" enctype="multipart/form-data" class="card form-grid">
-    <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
+    <?= csrfField() ?>
     <div class="profile-photo-field">
         <img
             id="profile-photo-preview"

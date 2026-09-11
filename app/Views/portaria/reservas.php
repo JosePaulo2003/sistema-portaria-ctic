@@ -68,10 +68,32 @@ $diasSemanaReserva = [
     </div>
 </form>
 
+<?php if ($podeApagarReserva && $reservas): ?>
+    <section class="reservation-bulk-toolbar" aria-label="Ações para múltiplas reservas">
+        <label class="reservation-bulk-toolbar__select">
+            <input type="checkbox" class="reservation-select-checkbox" data-reservation-select-all>
+            <span>Selecionar todas as reservas exibidas</span>
+        </label>
+        <form
+            id="reservas-excluir-em-lote"
+            method="post"
+            action="<?= e(baseUrl('/portaria/reservas/excluir-em-lote')) ?>"
+            data-reservation-bulk-form
+        >
+            <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
+            <span class="reservation-bulk-toolbar__count" data-reservation-selected-count>0 selecionadas</span>
+            <button class="button button--danger" type="submit" data-reservation-delete-selected disabled>
+                Apagar selecionadas
+            </button>
+        </form>
+    </section>
+<?php endif; ?>
+
 <div class="card table-wrap">
     <table>
         <thead>
             <tr>
+                <?php if ($podeApagarReserva): ?><th class="reservation-select-heading">Selecionar</th><?php endif; ?>
                 <th>Titulo</th>
                 <th>Sala</th>
                 <th>Solicitante</th>
@@ -84,18 +106,31 @@ $diasSemanaReserva = [
         <tbody>
             <?php foreach ($reservas as $reserva): ?>
                 <tr>
-                    <td>
+                    <?php if ($podeApagarReserva): ?>
+                        <td class="reservation-select-cell" data-label="Selecionar">
+                            <input
+                                type="checkbox"
+                                class="reservation-select-checkbox"
+                                name="reserva_ids[]"
+                                value="<?= e($reserva['id']) ?>"
+                                form="reservas-excluir-em-lote"
+                                data-reservation-select
+                                aria-label="Selecionar reserva <?= e($reserva['titulo']) ?>"
+                            >
+                        </td>
+                    <?php endif; ?>
+                    <td data-label="Título">
                         <strong><?= e($reserva['titulo']) ?></strong>
                         <?php if (!empty($reserva['finalidade'])): ?>
                             <br><span class="muted"><?= e($reserva['finalidade']) ?></span>
                         <?php endif; ?>
                     </td>
-                    <td><?= e($reserva['sala_nome'] ?? '-') ?></td>
-                    <td><?= e($reserva['usuario_nome']) ?></td>
-                    <td><?= e(date('d/m/Y H:i', strtotime($reserva['inicio_em']))) ?></td>
-                    <td><?= e(date('d/m/Y H:i', strtotime($reserva['fim_em']))) ?></td>
-                    <td><span class="status-badge"><?= e($reserva['situacao']) ?></span></td>
-                    <td>
+                    <td data-label="Sala"><?= e($reserva['sala_nome'] ?? '-') ?></td>
+                    <td data-label="Solicitante"><?= e($reserva['usuario_nome']) ?></td>
+                    <td data-label="Início"><?= e(date('d/m/Y H:i', strtotime($reserva['inicio_em']))) ?></td>
+                    <td data-label="Fim"><?= e(date('d/m/Y H:i', strtotime($reserva['fim_em']))) ?></td>
+                    <td data-label="Situação"><span class="status-badge"><?= e($reserva['situacao']) ?></span></td>
+                    <td data-label="Ações">
                         <?php if (($reserva['situacao'] ?? '') === 'pendente'): ?>
                             <form method="post" action="<?= e(baseUrl('/portaria/reservas/atualizar')) ?>" class="inline-actions">
                                 <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
@@ -117,7 +152,7 @@ $diasSemanaReserva = [
                 </tr>
             <?php endforeach; ?>
             <?php if (!$reservas): ?>
-                <tr><td colspan="7">Nenhuma reserva cadastrada.</td></tr>
+                <tr><td colspan="<?= $podeApagarReserva ? '8' : '7' ?>">Nenhuma reserva cadastrada.</td></tr>
             <?php endif; ?>
         </tbody>
     </table>

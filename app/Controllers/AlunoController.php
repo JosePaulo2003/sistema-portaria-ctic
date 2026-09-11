@@ -5,10 +5,10 @@ namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Models\BloqueioChave;
-use App\Models\Movimentacao;
 use App\Models\PermissaoSala;
 use App\Models\Sala;
 use App\Models\User;
+use App\Services\RetiradaChaveService;
 
 // Area do aluno: consulta de informacoes e retirada de chaves quando autorizada.
 class AlunoController extends Controller
@@ -72,19 +72,14 @@ class AlunoController extends Controller
             redirect($retorno);
         }
 
-        (new Movimentacao())->create([
-            'usuario_id' => currentUser()['id'],
-            'sala_id' => $salaId,
-            'tipo_movimentacao' => 'retirada_chave',
-            'situacao' => 'aberta',
-            'retirada_em' => date('Y-m-d H:i:s'),
-            'devolucao_prevista_em' => null,
-            'registrado_por_usuario_id' => currentUser()['id'],
-            'observacao' => $_POST['observacao'] ?? null,
-        ]);
-
-        audit('Chaves', 'retirada_autorizada', 'Retirada de chave autorizada registrada.');
-        flash('success', 'Retirada registrada.');
+        try {
+            $solicitacao = (new RetiradaChaveService())->solicitar(currentUser(), $salaId, $_POST['observacao'] ?? null);
+        } catch (\RuntimeException $error) {
+            flash('error', $error->getMessage());
+            redirect($retorno);
+        }
+        $_SESSION['_codigo_retirada'] = $solicitacao;
+        flash('success', 'Solicitação enviada à Portaria. Apresente a senha temporária de 4 dígitos para receber a chave.');
         redirect($retorno);
     }
 }

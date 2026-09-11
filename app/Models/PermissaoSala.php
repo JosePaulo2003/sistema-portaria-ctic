@@ -80,6 +80,12 @@ class PermissaoSala extends Model
                AND (sala_id = ? OR acesso_total = 1)
                AND (inicio_autorizacao IS NULL OR inicio_autorizacao <= NOW())
                AND (expira_em IS NULL OR expira_em >= NOW())
+               AND (
+                    horario_inicio IS NULL
+                    OR horario_fim IS NULL
+                    OR (horario_inicio <= horario_fim AND CURTIME() BETWEEN horario_inicio AND horario_fim)
+                    OR (horario_inicio > horario_fim AND (CURTIME() >= horario_inicio OR CURTIME() <= horario_fim))
+               )
                AND (dias_semana IS NULL OR dias_semana = "" OR FIND_IN_SET(?, REPLACE(dias_semana, ", ", ",")) > 0)'
         );
         $stmt->execute([$usuarioId, $salaId, $this->diaSemanaAtual()]);
@@ -95,6 +101,12 @@ class PermissaoSala extends Model
                AND situacao = "ativa"
                AND (inicio_autorizacao IS NULL OR inicio_autorizacao <= NOW())
                AND (expira_em IS NULL OR expira_em >= NOW())
+               AND (
+                    horario_inicio IS NULL
+                    OR horario_fim IS NULL
+                    OR (horario_inicio <= horario_fim AND CURTIME() BETWEEN horario_inicio AND horario_fim)
+                    OR (horario_inicio > horario_fim AND (CURTIME() >= horario_inicio OR CURTIME() <= horario_fim))
+               )
                AND (dias_semana IS NULL OR dias_semana = "" OR FIND_IN_SET(?, REPLACE(dias_semana, ", ", ",")) > 0)'
         );
         $stmt->execute([$usuarioId, $this->diaSemanaAtual()]);

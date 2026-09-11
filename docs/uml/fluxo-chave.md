@@ -1,5 +1,11 @@
 # Fluxo de retirada e devolucao de chave
 
+Alunos, estagiarios e bolsistas iniciam a solicitacao no proprio acesso. A Portaria
+recebe um alerta persistente, que pode ser minimizado, e aceita ou recusa a entrega.
+Para esses perfis, o codigo simples de quatro digitos fica visivel tanto para o
+solicitante quanto para o agente. Os demais perfis autorizados usam retirada
+automatica. Servicos Gerais mantem o fluxo proprio de trabalho.
+
 ```mermaid
 sequenceDiagram
     actor Usuario
@@ -11,15 +17,26 @@ sequenceDiagram
     Sistema->>Banco: verifica permissoes_salas e bloqueios_chaves
     alt sem permissao ou bloqueado
         Sistema-->>Usuario: retirada negada
-    else retirada permitida
-        Sistema->>Banco: INSERT movimentacoes tipo=retirada_chave
-        Sistema-->>Portaria: exibe movimentacao aberta
-        Portaria->>Banco: UPDATE movimentacoes devolucao_real_em
-        Portaria->>Banco: INSERT movimentacoes tipo=devolucao_chave
-        alt devolucao irregular
-            Portaria->>Banco: INSERT advertencias_chaves
-            Banco->>Banco: INSERT bloqueios_chaves quando aplicavel
+    else aluno, estagiario ou bolsista
+        Sistema->>Banco: grava alerta e codigo temporario (10 min)
+        Sistema-->>Usuario: exibe codigo de 4 digitos
+        Sistema-->>Portaria: exibe alerta persistente e o mesmo codigo
+        opt agente minimiza o alerta
+            Portaria->>Sistema: minimiza sem encerrar
         end
-        Sistema-->>Usuario: fluxo encerrado
+        alt agente aceita
+            Portaria->>Banco: registra retirada e encerra alerta
+        else agente recusa
+            Portaria->>Banco: registra recusa e encerra alerta
+        end
+    else demais perfis autorizados
+        Sistema->>Banco: registra retirada automaticamente
     end
+    Sistema-->>Portaria: agrupa retiradas abertas por perfil
+    Portaria->>Banco: registra devolucao da chave
+    alt devolucao irregular
+        Portaria->>Banco: registra advertencia
+        Banco->>Banco: cria bloqueio quando aplicavel
+    end
+    Sistema-->>Usuario: fluxo encerrado
 ```

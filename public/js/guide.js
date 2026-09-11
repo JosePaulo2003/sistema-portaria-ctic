@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const topicSearch = layer.querySelector('[data-guide-search]');
   const topicCount = layer.querySelector('[data-guide-topic-count]');
   const emptyState = layer.querySelector('[data-guide-empty]');
-  const closeButton = layer.querySelector('[data-guide-close]');
+  const closeButtons = layer.querySelectorAll('[data-guide-close]');
   const ring = layer.querySelector('[data-guide-ring]');
   const popover = layer.querySelector('[data-guide-popover]');
   const title = layer.querySelector('[data-guide-title]');
@@ -620,7 +620,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   startButtons.forEach((button) => button.addEventListener('click', openCatalog));
   topicSearch?.addEventListener('input', () => renderTopics(topicSearch.value));
-  closeButton?.addEventListener('click', closeHelp);
+  closeButtons.forEach((button) => button.addEventListener('click', closeHelp));
   skipButton?.addEventListener('click', closeHelp);
   previousButton?.addEventListener('click', () => {
     if (touring && currentIndex > 0) {

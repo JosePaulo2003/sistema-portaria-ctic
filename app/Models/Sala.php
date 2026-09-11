@@ -55,12 +55,15 @@ class Sala extends Model
         $salas = $this->listDisponibilidade();
         $perfil = (string) ($user['perfil_nome'] ?? '');
 
-        if ($user && !$this->perfilPodeVerTodasAsChaves($perfil)) {
-            $salas = array_values(array_filter($salas, fn (array $s): bool => $this->usuarioAutorizadoParaChave((int) $s['id'], $user)));
-        }
+        $salas = $user
+            ? array_values(array_filter($salas, fn (array $s): bool => $this->usuarioAutorizadoParaChave((int) $s['id'], $user)))
+            : [];
 
         foreach ($salas as &$sala) {
-            $retiravel = ($sala['status_consulta_publica'] ?? '') === 'Fechada';
+            // Reservas e aulas não retiram fisicamente a chave da portaria. A chave
+            // só deixa esta lista quando a sala está bloqueada/em manutenção ou já
+            // existe uma movimentação aberta para ela.
+            $retiravel = $this->salaDisponivelParaRetirada((int) $sala['id']);
             $sala['chave_retiravel'] = $retiravel;
             $sala['chave_status'] = $retiravel ? 'disponivel' : 'indisponivel';
             $sala['chave_status_label'] = $retiravel ? 'disponivel' : 'indisponivel';
@@ -81,33 +84,21 @@ class Sala extends Model
         if (!$user) {
             return false;
         }
-        if ($this->perfilPodeVerTodasAsChaves((string) ($user['perfil_nome'] ?? ''))) {
-            return true;
-        }
         return (new PermissaoSala())->usuarioTemAcesso((int) $user['id'], $salaId);
-    }
-
-    private function perfilPodeVerTodasAsChaves(string $perfil): bool
-    {
-        $normalizado = comparableProfile($perfil);
-        $perfis = array_map(fn (string $item): string => comparableProfile($item), [
-            'Desenvolvedor',
-            'Serviços Gerais',
-            'Agente de Portaria',
-            'Administrativo',
-            'Diretor',
-        ]);
-        return in_array($normalizado, $perfis, true);
     }
 
     private function salaDisponivelParaRetirada(int $salaId): bool
     {
         $sala = $this->find($salaId);
-        if (!$sala) {
+        if (!$sala || ($sala['situacao'] ?? '') !== 'disponivel') {
             return false;
         }
-        [$status] = $this->statusPublico($salaId, $sala, date('Y-m-d H:i:s'));
-        return $status === 'Fechada';
+
+        $stmt = $this->db()->prepare(
+            'SELECT COUNT(*) FROM movimentacoes WHERE sala_id = ? AND situacao = "aberta"'
+        );
+        $stmt->execute([$salaId]);
+        return (int) $stmt->fetchColumn() === 0;
     }
 
     private function priorizarDiretoria(array $salas): array
@@ -164,7 +155,7 @@ class Sala extends Model
     public function movimentacoesDaSala(int $salaId): array
     {
         $stmt = $this->db()->prepare(
-            'SELECT m.*, u.nome AS usuario_nome
+            'SELECT m.*, COALESCE(NULLIF(TRIM(m.usuario_nome_manual), ""), u.nome) AS usuario_nome
              FROM movimentacoes m
              JOIN usuarios u ON u.id = m.usuario_id
              WHERE m.sala_id = ?

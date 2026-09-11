@@ -8,6 +8,7 @@ DROP TABLE IF EXISTS advertencias_chaves;
 DROP TABLE IF EXISTS notificacoes_portaria;
 DROP TABLE IF EXISTS logs_sistema;
 DROP TABLE IF EXISTS logs_auditoria;
+DROP TABLE IF EXISTS recuperacoes_senha;
 DROP TABLE IF EXISTS solicitacoes_usuarios;
 DROP TABLE IF EXISTS movimentacoes;
 DROP TABLE IF EXISTS permissoes_itens;
@@ -37,6 +38,7 @@ CREATE TABLE usuarios (
   id INT AUTO_INCREMENT PRIMARY KEY,
   nome VARCHAR(150) NOT NULL,
   email VARCHAR(190) NOT NULL UNIQUE,
+  matricula VARCHAR(80) NULL,
   senha_hash VARCHAR(255) NOT NULL,
   perfil_id INT NOT NULL,
   situacao ENUM('ativo','pendente','inativo','bloqueado') NOT NULL DEFAULT 'pendente',
@@ -51,6 +53,22 @@ CREATE TABLE usuarios (
   CONSTRAINT fk_usuarios_perfil FOREIGN KEY (perfil_id) REFERENCES perfis(id),
   CONSTRAINT fk_usuarios_professor FOREIGN KEY (professor_indicador_id) REFERENCES usuarios(id) ON DELETE SET NULL,
   INDEX idx_usuarios_acesso_expira (acesso_expira_em)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE recuperacoes_senha (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  usuario_id INT NOT NULL,
+  token_hash CHAR(64) NOT NULL,
+  expira_em DATETIME NOT NULL,
+  usado_em DATETIME NULL,
+  tentativas TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  solicitado_ip_hash CHAR(64) NULL,
+  criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_recuperacoes_senha_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+  UNIQUE KEY uk_recuperacoes_senha_token (token_hash),
+  INDEX idx_recuperacoes_senha_usuario (usuario_id, usado_em, expira_em),
+  INDEX idx_recuperacoes_senha_ip (solicitado_ip_hash, criado_em),
+  INDEX idx_recuperacoes_senha_criado (criado_em)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE solicitacoes_usuarios (
@@ -198,6 +216,8 @@ CREATE TABLE permissoes_salas (
   autorizado_por INT NOT NULL,
   inicio_autorizacao DATETIME NULL,
   expira_em DATETIME NULL,
+  horario_inicio TIME NULL,
+  horario_fim TIME NULL,
   dias_semana VARCHAR(120) NULL,
   observacao TEXT NULL,
   situacao ENUM('ativa','revogada','expirada') NOT NULL DEFAULT 'ativa',
@@ -228,6 +248,7 @@ CREATE TABLE permissoes_itens (
 CREATE TABLE movimentacoes (
   id INT AUTO_INCREMENT PRIMARY KEY,
   usuario_id INT NOT NULL,
+  usuario_nome_manual VARCHAR(180) NULL,
   sala_id INT NULL,
   item_portaria_id INT NULL,
   tipo_movimentacao ENUM('retirada_chave','devolucao_chave','retirada_item','devolucao_item','retirada_recurso','devolucao_recurso') NOT NULL,
@@ -313,7 +334,6 @@ CREATE TABLE configuracoes_sistema (
   descricao TEXT NULL,
   atualizado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 USE sgrp;
 
 INSERT INTO perfis (nome, nivel) VALUES
@@ -330,13 +350,6 @@ INSERT INTO perfis (nome, nivel) VALUES
 ('Motorista', 25),
 ('Aluno', 20),
 ('Visitante', 10);
-
-SET @senha_desenvolvedor = '$2y$10$0zy/5kkBuMKdZR6qrIJ3KOZoUgSXvf8MdCGKOIN2gbuHwSvuSjYpK';
-
-INSERT INTO usuarios (nome, email, senha_hash, perfil_id, situacao)
-SELECT 'Desenvolvedor', 'desenvolvedor@sgrp.local', @senha_desenvolvedor, id, 'ativo'
-FROM perfis
-WHERE nome = 'Desenvolvedor';
 
 INSERT INTO configuracoes_sistema (chave, valor, descricao)
 VALUES ('dias_bloqueio_advertencia', '7', 'Quantidade de dias de bloqueio após mais de três advertências.');

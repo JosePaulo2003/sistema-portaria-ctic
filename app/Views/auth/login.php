@@ -1,5 +1,7 @@
 <section class="auth-card">
-    <h1>SGRP</h1>
+    <div class="auth-brand">
+        <img class="auth-brand__logo" src="<?= e(assetUrl('assets/sgrp_logo.png')) ?>" alt="SGRP - Sistema de Gestão de Recursos Pedagógicos">
+    </div>
     <p>Sistema de Gestão de Recursos Pedagógicos</p>
     <form method="post" action="<?= e(baseUrl('/login')) ?>" class="stack" autocomplete="off">
         <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>

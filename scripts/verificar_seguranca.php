@@ -23,13 +23,13 @@ foreach ($iterator as $file) {
     preg_match_all($formPattern, $content, $matches, PREG_OFFSET_CAPTURE);
     foreach ($matches[0] as [$form, $offset]) {
         $postForms++;
-        $hasExplicitCsrfToken = str_contains($form, 'name="_csrf"')
-            && str_contains($form, 'csrfToken()')
-            && str_contains($form, 'data-csrf-token');
-        if (!$hasExplicitCsrfToken) {
+        $usaHelperCsrf = str_contains($form, 'csrfField(');
+        $usaCampoCsrfExplicito = preg_match('/\bname\s*=\s*["\']_csrf["\']/i', $form) === 1
+            && str_contains($form, 'csrfToken()');
+        if (!$usaHelperCsrf && !$usaCampoCsrfExplicito) {
             $line = substr_count(substr($content, 0, $offset), "\n") + 1;
             $failures[] = str_replace('\\', '/', substr($file->getPathname(), strlen($root) + 1))
-                . ':' . $line . ' - formulario POST sem campo CSRF explicito.';
+                . ':' . $line . ' - formulário POST sem token CSRF.';
         }
     }
 }

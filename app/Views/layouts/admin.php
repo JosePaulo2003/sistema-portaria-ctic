@@ -310,6 +310,9 @@ $navIcon = static function (string $icon, string $class = 'nav-icon') use ($icon
     $paths = $iconPaths[$icon] ?? $iconPaths['file'];
     return '<svg class="' . e($class) . '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' . $paths . '</svg>';
 };
+$isCurrentNavPath = static function (string $path) use ($guideCurrentPath): bool {
+    return (rtrim('/' . ltrim($path, '/'), '/') ?: '/') === $guideCurrentPath;
+};
 ?>
 <!doctype html>
 <html lang="pt-BR">
@@ -317,8 +320,11 @@ $navIcon = static function (string $icon, string $class = 'nav-icon') use ($icon
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= e($title ?? 'SGRP') ?></title>
+    <link rel="icon" type="image/png" sizes="32x32" href="<?= e(assetUrl('assets/sgrp-favicon-32.png')) ?>">
+    <link rel="icon" type="image/svg+xml" sizes="any" href="<?= e(assetUrl('assets/sgrp-favicon.svg')) ?>">
     <link rel="stylesheet" href="<?= e(assetUrl('css/app.css')) ?>">
     <link rel="stylesheet" href="<?= e(assetUrl('css/guide.css')) ?>">
+    <link rel="stylesheet" href="<?= e(assetUrl('css/usability-refresh.css')) ?>">
 </head>
 <body class="<?= comparableProfile($profile) === comparableProfile('Agente de Portaria') ? 'low-vision-ui' : '' ?>">
     <header class="topbar">
@@ -330,7 +336,6 @@ $navIcon = static function (string $icon, string $class = 'nav-icon') use ($icon
                 <span><?= e($title ?? $profile) ?></span>
             </div>
         </div>
-        <button class="menu-toggle" data-menu-toggle type="button" aria-label="Abrir menu" aria-controls="admin-nav" aria-expanded="false"><?= $navIcon('menu', 'menu-toggle__icon') ?></button>
         <div class="topbar__user">
             <?php if (!empty($user['foto_perfil_url'])): ?>
                 <img class="topbar__avatar" src="<?= e(baseUrl($user['foto_perfil_url'])) ?>" alt="Foto de perfil">
@@ -346,28 +351,48 @@ $navIcon = static function (string $icon, string $class = 'nav-icon') use ($icon
         </div>
     </header>
     <nav class="admin-nav" id="admin-nav" data-admin-nav>
+        <div class="admin-nav__mobile-heading">
+            <strong>O que você deseja fazer?</strong>
+            <span>Escolha uma das funcionalidades disponíveis abaixo.</span>
+        </div>
         <?php if ($profile === 'Desenvolvedor'): ?>
-            <a href="<?= e(baseUrl($calendarItem[1])) ?>" data-guide-path="<?= e($calendarItem[1]) ?>"><?= $navIcon($iconForPath($calendarItem[1])) ?><span><?= e($calendarItem[0]) ?></span></a>
+            <?php $calendarIsCurrent = $isCurrentNavPath((string) $calendarItem[1]); ?>
+            <a class="<?= $calendarIsCurrent ? 'is-current' : '' ?>" href="<?= e(baseUrl($calendarItem[1])) ?>" data-guide-path="<?= e($calendarItem[1]) ?>"<?= $calendarIsCurrent ? ' aria-current="page"' : '' ?>><?= $navIcon($iconForPath($calendarItem[1])) ?><span><?= e($calendarItem[0]) ?></span></a>
             <?php foreach ($developerGroups as $groupName => $groupItems): ?>
+                <?php
+                $groupIsCurrent = false;
+                foreach ($groupItems as $groupItem) {
+                    if ($isCurrentNavPath((string) $groupItem[1])) {
+                        $groupIsCurrent = true;
+                        break;
+                    }
+                }
+                ?>
                 <div class="nav-group">
-                    <button class="nav-group__button" type="button"><?= $navIcon($iconForGroup($groupName)) ?><span><?= e($groupName) ?></span></button>
+                    <button class="nav-group__button<?= $groupIsCurrent ? ' is-current' : '' ?>" type="button"<?= $groupIsCurrent ? ' aria-current="page"' : '' ?>><?= $navIcon($iconForGroup($groupName)) ?><span><?= e($groupName) ?></span></button>
                     <div class="nav-group__menu">
                         <?php foreach ($groupItems as $item): ?>
-                            <a href="<?= e(baseUrl($item[1])) ?>" data-guide-path="<?= e($item[1]) ?>"><?= $navIcon($iconForPath($item[1])) ?><span><?= e($item[0]) ?></span></a>
+                            <?php $itemIsCurrent = $isCurrentNavPath((string) $item[1]); ?>
+                            <a class="<?= $itemIsCurrent ? 'is-current' : '' ?>" href="<?= e(baseUrl($item[1])) ?>" data-guide-path="<?= e($item[1]) ?>"<?= $itemIsCurrent ? ' aria-current="page"' : '' ?>><?= $navIcon($iconForPath($item[1])) ?><span><?= e($item[0]) ?></span></a>
                         <?php endforeach; ?>
                     </div>
                 </div>
             <?php endforeach; ?>
         <?php else: ?>
             <?php foreach ($items as $item): ?>
-                <a href="<?= e(baseUrl($item[1])) ?>" data-guide-path="<?= e($item[1]) ?>"><?= $navIcon($iconForPath($item[1])) ?><span><?= e($item[0]) ?></span></a>
+                <?php $itemIsCurrent = $isCurrentNavPath((string) $item[1]); ?>
+                <a class="<?= $itemIsCurrent ? 'is-current' : '' ?>" href="<?= e(baseUrl($item[1])) ?>" data-guide-path="<?= e($item[1]) ?>"<?= $itemIsCurrent ? ' aria-current="page"' : '' ?>><?= $navIcon($iconForPath($item[1])) ?><span><?= e($item[0]) ?></span></a>
             <?php endforeach; ?>
         <?php endif; ?>
     </nav>
     <main class="page-shell">
         <?= flash() ?>
+        <?= withdrawalCodeNotice() ?>
         <?= $content ?>
     </main>
+    <?php if (comparableProfile($profile) === comparableProfile('Agente de Portaria')): ?>
+        <?php require dirname(__DIR__) . '/portaria/_alertas-retirada.php'; ?>
+    <?php endif; ?>
     <footer class="site-footer">© CTIC-CESIT. Todos os direitos reservados.</footer>
     <div class="guide-layer" data-guide-layer aria-hidden="true" hidden>
         <div class="guide-focus-ring guide-focus-ring--center" data-guide-ring></div>
@@ -398,10 +423,13 @@ $navIcon = static function (string $icon, string $class = 'nav-icon') use ($icon
             </div>
             <footer class="guide-catalog__tip">Dica: ao abrir a Ajuda dentro de uma tela, o tutorial dessa página aparece em destaque.</footer>
         </section>
-        <section class="guide-popover guide-popover--center" data-guide-popover role="dialog" aria-modal="true" aria-labelledby="guide-title" aria-describedby="guide-description" tabindex="-1" hidden>
+        <section class="guide-popover guide-popover--center guide-tour" data-guide-popover role="dialog" aria-modal="true" aria-labelledby="guide-title" aria-describedby="guide-description" tabindex="-1" hidden>
             <div class="guide-popover__eyebrow">
                 <span>Tutorial</span>
-                <span data-guide-counter></span>
+                <span class="guide-tour__header-actions">
+                    <span data-guide-counter></span>
+                    <button class="guide-catalog__close" type="button" data-guide-close aria-label="Fechar tutorial" title="Fechar tutorial">&times;</button>
+                </span>
             </div>
             <div class="guide-progress" aria-hidden="true"><span data-guide-progress></span></div>
             <h2 id="guide-title" data-guide-title></h2>

@@ -8,6 +8,8 @@ use App\Models\Curso;
 use App\Models\Perfil;
 use App\Models\SolicitacaoUsuario;
 use App\Models\User;
+use App\Services\EmailService;
+use Throwable;
 
 class UsuarioController extends Controller
 {
@@ -37,6 +39,7 @@ class UsuarioController extends Controller
         (new User())->create([
             'nome' => trim((string) $_POST['nome']),
             'email' => trim((string) $_POST['email']),
+            'matricula' => trim((string) ($_POST['matricula'] ?? '')) ?: null,
             'senha_hash' => password_hash((string) $_POST['senha'], PASSWORD_DEFAULT),
             'perfil_id' => (int) $_POST['perfil_id'],
             'situacao' => $_POST['situacao'] ?? 'ativo',
@@ -64,6 +67,7 @@ class UsuarioController extends Controller
         $data = [
             'nome' => trim((string) $_POST['nome']),
             'email' => trim((string) $_POST['email']),
+            'matricula' => trim((string) ($_POST['matricula'] ?? '')) ?: null,
             'perfil_id' => (int) $_POST['perfil_id'],
             'situacao' => $_POST['situacao'] ?? 'ativo',
             'curso_id' => ($_POST['curso_id'] ?? '') ?: null,
@@ -109,7 +113,20 @@ class UsuarioController extends Controller
             flash('error', 'Solicitacao nao encontrada ou ja analisada.');
             redirect('/desenvolvedor/usuarios/solicitacoes');
         }
-        if ((new User())->findByEmail((string) $solicitacao['email'])) {
+        $nome = trim((string) ($_POST['nome'] ?? $solicitacao['nome']));
+        $email = mb_strtolower(trim((string) ($_POST['email'] ?? $solicitacao['email'])));
+        $perfilId = (int) ($_POST['perfil_id'] ?? 0);
+        $perfil = (new Perfil())->find($perfilId);
+        $situacao = (string) ($_POST['situacao'] ?? 'ativo');
+
+        if ($nome === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || !$perfil) {
+            flash('error', 'Confira o nome, o e-mail e o perfil antes de aprovar.');
+            redirect('/desenvolvedor/usuarios/solicitacoes');
+        }
+        if (!in_array($situacao, ['ativo', 'pendente'], true)) {
+            $situacao = 'ativo';
+        }
+        if ((new User())->findByEmail($email)) {
             flash('error', 'Ja existe um usuario com este e-mail.');
             redirect('/desenvolvedor/usuarios/solicitacoes');
         }
@@ -121,16 +138,37 @@ class UsuarioController extends Controller
         }
 
         $usuarioId = (new User())->create([
-            'nome' => trim((string) ($_POST['nome'] ?: $solicitacao['nome'])),
-            'email' => trim((string) ($_POST['email'] ?: $solicitacao['email'])),
+            'nome' => $nome,
+            'email' => $email,
+            'matricula' => trim((string) ($solicitacao['matricula'] ?? '')) ?: null,
             'senha_hash' => password_hash($senha, PASSWORD_DEFAULT),
-            'perfil_id' => (int) $_POST['perfil_id'],
-            'situacao' => $_POST['situacao'] ?? 'ativo',
+            'perfil_id' => $perfilId,
+            'situacao' => $situacao,
             'curso_id' => ($_POST['curso_id'] ?? '') ?: null,
         ]);
         $solicitacoes->aprovar((int) $solicitacao['id'], $usuarioId, (int) currentUser()['id']);
         audit('Usuarios', 'aprovacao', 'Solicitacao aprovada e usuario criado.', ['solicitacao_id' => $solicitacao['id'], 'usuario_id' => $usuarioId]);
-        flash('success', 'Solicitacao aprovada e usuario criado.');
+
+        try {
+            (new EmailService())->enviarNovoAcesso([
+                'nome' => $nome,
+                'email' => $email,
+                'perfil_nome' => (string) $perfil['nome'],
+                'situacao' => $situacao,
+            ], $senha);
+            systemLog('info', 'Usuarios', 'Credenciais do novo usuario enviadas por e-mail.', [
+                'solicitacao_id' => (int) $solicitacao['id'],
+                'usuario_id' => $usuarioId,
+            ]);
+            flash('success', 'Solicitacao aprovada, usuario criado e credenciais enviadas por e-mail.');
+        } catch (Throwable $exception) {
+            systemLog('error', 'Usuarios', 'Usuario criado, mas o envio das credenciais falhou.', [
+                'solicitacao_id' => (int) $solicitacao['id'],
+                'usuario_id' => $usuarioId,
+                'erro' => $exception->getMessage(),
+            ]);
+            flash('error', 'O usuario foi criado, mas o e-mail não pôde ser enviado. Entregue a senha copiada ao usuário e verifique o SMTP.');
+        }
         redirect('/desenvolvedor/usuarios/solicitacoes');
     }
 

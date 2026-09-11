@@ -1,84 +1,107 @@
-# SGRP - Sistema de Gestao de Recursos de Portaria
+# SGRP — Sistema de Gestão de Recursos de Portaria
 
-Sistema web em PHP para controle de portaria, reservas de salas, retirada de chaves, movimentacao de itens e apoio aos fluxos administrativos do CTIC/CESIT.
+Sistema web do CTIC/CESIT para controle de usuários, permissões, reservas de salas, retirada de chaves e itens e atendimento da Portaria.
 
-## Principais recursos
+## Recursos atuais
 
-- Autenticacao por perfil de acesso.
-- Painel por area: portaria, secretaria, professor, administrativo, direcao, bolsista, aluno e visitante.
-- Reserva e consulta de salas.
-- Controle de retirada e devolucao de chaves.
-- Controle de retirada de itens da portaria.
-- Autorizacoes, advertencias, bloqueios e logs de auditoria.
-- Integracao opcional com Google Forms via webhook token.
+- Autenticação e painéis específicos por perfil.
+- Cadastro manual e solicitações de novos usuários via Google Forms/webhook.
+- Aprovação de solicitação com envio das credenciais por e-mail.
+- Recuperação de senha por código de uso único enviado por e-mail.
+- Sessão persistente, sem encerramento por mudança de IP, Wi-Fi ou atualização do navegador.
+- Reserva comum, recorrente e acadêmica de salas, com calendário de disponibilidade.
+- Controle de retirada e devolução de chaves e itens.
+- Solicitação obrigatória de permissão de chave ao CTIC/CESIT.
+- Confirmação pela Portaria com senha temporária para aluno, bolsista e estagiário.
+- Retirada automática para os demais perfis e fluxo próprio para Serviços Gerais.
+- Alertas de retirada minimizáveis e persistentes até aceitação, recusa ou fechamento.
+- Lista de retiradas agrupada dinamicamente por perfil.
+- Autorizações de bolsistas/estagiários por professor e período.
+- Advertências, bloqueios, relatórios e logs de auditoria.
+- Guias contextuais e interface responsiva.
 
-## Tecnologias
+## Tecnologias e requisitos
 
-- PHP 8.1+
-- MySQL ou MariaDB
-- PDO com prepared statements
-- Apache com `mod_rewrite`
-- HTML, CSS e JavaScript sem framework obrigatorio
+- PHP 8.1 ou superior, com `pdo_mysql`, `mbstring`, `openssl` e `sockets`.
+- MySQL ou MariaDB.
+- Apache com `mod_rewrite`.
+- Navegador moderno.
+- Servidor SMTP com TLS para os e-mails transacionais.
 
-## Instalacao
+O projeto usa PHP puro, MVC simples, PDO, HTML, CSS e JavaScript, sem dependência obrigatória do Composer.
 
-1. Copie o projeto para o diretorio servido pelo Apache.
+## Instalação
+
+1. Coloque o projeto no diretório servido pelo Apache.
 2. Copie `.env.example` para `.env`.
-3. Ajuste as credenciais do banco e o `APP_BASE_PATH`, se necessario.
-4. Importe a estrutura do banco.
-5. Importe os dados iniciais.
-6. Crie o primeiro usuario Desenvolvedor pelo script CLI.
-
-Exemplo no XAMPP:
-
-```powershell
-C:\xampp\mysql\bin\mysql.exe --default-character-set=utf8mb4 -u root -e "source C:/xampp/htdocs/sgrp/database/schema.sql"
-C:\xampp\mysql\bin\mysql.exe --default-character-set=utf8mb4 -u root -e "source C:/xampp/htdocs/sgrp/database/seeds.sql"
-C:\xampp\php\php.exe scripts/create_developer_user.php "Desenvolvedor" "admin@example.local" "troque-por-uma-senha-forte"
-```
-
-Exemplo em Linux:
+3. Configure aplicação, banco, webhook e SMTP no `.env`.
+4. Importe `database/schema.sql` e `database/seeds.sql`.
+5. Crie o primeiro usuário Desenvolvedor pelo script CLI.
 
 ```bash
+cp .env.example .env
 mysql --default-character-set=utf8mb4 -u sgrp_user -p sgrp < database/schema.sql
 mysql --default-character-set=utf8mb4 -u sgrp_user -p sgrp < database/seeds.sql
-php scripts/create_developer_user.php "Desenvolvedor" "admin@example.local" "troque-por-uma-senha-forte"
+php scripts/create_developer_user.php "Desenvolvedor" "admin@example.local" "use-uma-senha-forte-com-12-caracteres"
 ```
 
-## Configuracao
+`database/mysql.sql` contém estrutura e dados iniciais em um único arquivo. Os seeds não criam usuário ou senha padrão.
 
-As configuracoes locais ficam no arquivo `.env`, que nao deve ser versionado.
+## Configuração
 
-Variaveis principais:
+Variáveis principais do `.env`:
 
-- `APP_NAME`: nome exibido pelo sistema.
-- `APP_ENV`: ambiente atual, como `local` ou `production`.
-- `APP_DEBUG`: habilita ou desabilita mensagens de debug.
-- `APP_BASE_PATH`: subdiretorio da aplicacao quando instalada fora da raiz do host.
-- `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`: conexao com o banco.
-- `FORM_WEBHOOK_TOKEN`: token usado por integracoes externas.
+- `APP_NAME`, `APP_ENV`, `APP_DEBUG`, `APP_BASE_PATH` e `APP_URL`.
+- `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` e `DB_TIMEZONE`.
+- `FORM_WEBHOOK_TOKEN` para as integrações de cadastro.
+- `MAIL_HOST`, `MAIL_PORT`, `MAIL_ENCRYPTION`, `MAIL_USERNAME` e `MAIL_PASSWORD`.
+- `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME` e `MAIL_TIMEOUT`.
 
-## Banco de Dados
+Use senha de aplicativo ou credencial SMTP exclusiva. Nunca coloque valores reais no `.env.example`.
 
-- `database/schema.sql`: estrutura completa do banco.
-- `database/seeds.sql`: perfis e configuracoes iniciais.
-- `database/mysql.sql`: estrutura e seed minimo em um unico arquivo.
+## Atualização de bancos existentes
 
-Os seeds nao criam senha padrao. O primeiro usuario deve ser criado pelo script `scripts/create_developer_user.php`.
+As migrações incrementais estão em `database/patch_*.sql`. Os scripts correspondentes em `scripts/migrar_*.php` carregam as credenciais do `.env` e preservam os dados existentes.
 
-## Seguranca
+Migrações mais recentes:
 
-- Nao versionar `.env`, logs, sessoes, backups, dumps reais ou uploads de usuarios.
-- Trocar senhas de banco e usuarios antes de publicar ou demonstrar em ambiente real.
-- Os formularios POST usam protecao CSRF.
-- As consultas usam PDO com prepared statements.
-- Acesso a `verificar_banco.php` e restrito a ambiente local ou debug.
+- retirada por pessoa sem cadastro;
+- autorizações de bolsistas e estagiários;
+- recuperação de senha por e-mail;
+- recuperação por código com limite de tentativas.
+
+Faça backup do banco e dos arquivos antes de aplicar migrações em produção.
+
+## Segurança
+
+- `.env`, uploads, logs, sessões, backups e dumps reais são ignorados pelo Git.
+- Senhas são armazenadas com `password_hash`.
+- Códigos de recuperação ficam no banco somente como hash, expiram em 30 minutos e aceitam até cinco tentativas.
+- Formulários POST usam CSRF e consultas usam prepared statements.
+- Cookies autenticados usam `HttpOnly` e `SameSite`.
+- A sessão é regenerada no login.
+- O SMTP usa TLS com validação do certificado.
+
+O envio da senha inicial por e-mail faz parte do fluxo operacional atual. Recomenda-se que o usuário a altere após o primeiro acesso.
 
 ## Estrutura
 
-- `app/`: controllers, models, views, helpers e core MVC.
-- `config/`: bootstrap, seguranca, sessao e banco.
-- `database/`: scripts SQL de instalacao.
-- `public/`: assets publicos e uploads controlados.
-- `routes/`: rotas web.
-- `scripts/`: utilitarios de setup e integracao.
+- `app/`: controllers, models, services, views, helpers e núcleo MVC.
+- `config/`: bootstrap, segurança, sessão e configurações.
+- `database/`: estrutura, seeds e migrações SQL.
+- `docs/`: documentação funcional e UML.
+- `public/`: CSS, JavaScript, imagens e uploads protegidos.
+- `routes/`: mapa de rotas HTTP.
+- `scripts/`: migrações, verificações e integrações.
+
+## Publicação
+
+Antes de enviar alterações ao GitHub:
+
+```bash
+git status
+git diff --check
+find app config routes scripts -name '*.php' -print0 | xargs -0 -n1 php -l
+```
+
+Não copie o `.env` nem dados de produção para o repositório.

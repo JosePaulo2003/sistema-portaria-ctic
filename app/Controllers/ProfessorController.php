@@ -15,6 +15,8 @@ use App\Models\Reserva;
 use App\Models\ReservaAula;
 use App\Models\Sala;
 use App\Models\User;
+use App\Services\AutorizacaoAcessoDocumento;
+use App\Services\RetiradaChaveService;
 
 // Fluxos do professor e rotas compartilhadas de retirada de chaves/itens.
 class ProfessorController extends Controller
@@ -95,6 +97,7 @@ class ProfessorController extends Controller
         (new User())->create([
             'nome' => trim((string) $_POST['nome']),
             'email' => trim((string) $_POST['email']),
+            'matricula' => trim((string) ($_POST['matricula'] ?? '')) ?: null,
             'senha_hash' => password_hash($senha, PASSWORD_DEFAULT),
             'perfil_id' => (int) $perfilId,
             'situacao' => 'ativo',
@@ -117,6 +120,7 @@ class ProfessorController extends Controller
         $data = [
             'nome' => trim((string) $_POST['nome']),
             'email' => trim((string) $_POST['email']),
+            'matricula' => trim((string) ($_POST['matricula'] ?? '')) ?: null,
             'situacao' => $_POST['situacao'] ?? 'ativo',
             'projeto_pesquisa' => $_POST['projeto_pesquisa'] ?: null,
             'professor_indicador_id' => currentUser()['id'],
@@ -150,46 +154,165 @@ class ProfessorController extends Controller
         requireProfile('Professor');
         verifyCsrf();
 
-        $bolsistaId = (int) ($_POST['usuario_id'] ?? 0);
         $professorId = (int) currentUser()['id'];
-        if (!(new User())->belongsToProfessor($bolsistaId, $professorId)) {
-            flash('error', 'Bolsista nao encontrado para este professor.');
+        $bolsistaIds = array_values(array_unique(array_filter(
+            array_map('intval', (array) ($_POST['usuario_ids'] ?? [])),
+            static fn (int $id): bool => $id > 0
+        )));
+        if (!$bolsistaIds || count($bolsistaIds) > 11) {
+            flash('error', 'Selecione entre 1 e 11 bolsistas para a autorizacao.');
             redirect('/professor/orientandos-bolsistas');
         }
 
+        $userModel = new User();
+        $bolsistas = [];
+        foreach ($bolsistaIds as $bolsistaId) {
+            if (!$userModel->belongsToProfessor($bolsistaId, $professorId)) {
+                flash('error', 'Um dos bolsistas selecionados nao pertence a este professor.');
+                redirect('/professor/orientandos-bolsistas');
+            }
+            $bolsista = $userModel->findWithProfile($bolsistaId);
+            if (!$bolsista || ($bolsista['situacao'] ?? '') !== 'ativo') {
+                flash('error', 'Somente bolsistas ativos podem receber uma nova autorizacao.');
+                redirect('/professor/orientandos-bolsistas');
+            }
+            $bolsistas[] = $bolsista;
+        }
+
         $salaId = (int) ($_POST['sala_id'] ?? 0);
-        if ($salaId <= 0) {
+        $sala = $salaId > 0 ? (new Sala())->find($salaId) : null;
+        if (!$sala) {
             flash('error', 'Informe a sala autorizada para o bolsista.');
             redirect('/professor/orientandos-bolsistas');
         }
 
-        $inicio = $this->criarDataHora((string) ($_POST['inicio_autorizacao'] ?? ''));
-        $expira = $this->criarDataHora((string) ($_POST['expira_em'] ?? ''));
-        if (!empty($_POST['inicio_autorizacao']) && !$inicio) {
-            flash('error', 'Informe um inicio de autorizacao valido.');
+        $inicio = $this->criarDataHora((string) ($_POST['inicio_autorizacao_data'] ?? ''));
+        $nuncaExpirar = !empty($_POST['nunca_expirar']);
+        $expira = $nuncaExpirar ? null : $this->criarDataHora((string) ($_POST['expira_em_data'] ?? ''));
+        if (!$inicio) {
+            flash('error', 'Informe uma data de inicio valida no formato dd/mm/aaaa.');
             redirect('/professor/orientandos-bolsistas');
         }
-        if (!empty($_POST['expira_em']) && !$expira) {
-            flash('error', 'Informe uma data de expiracao valida.');
+        if (!$nuncaExpirar && !$expira) {
+            flash('error', 'Informe uma data de expiracao valida ou marque Nunca expirar.');
             redirect('/professor/orientandos-bolsistas');
         }
-        if ($inicio && $expira && $expira < $inicio) {
+        $inicio = $inicio->setTime(0, 0, 0);
+        $expira = $expira?->setTime(23, 59, 59);
+        if ($expira && $expira < $inicio) {
             flash('error', 'A expiracao nao pode ser anterior ao inicio.');
             redirect('/professor/orientandos-bolsistas');
         }
 
-        (new PermissaoSala())->create([
-            'usuario_id' => $bolsistaId,
+        $horarioInicio = $this->horarioAutorizacao('horario_inicio');
+        $horarioFim = $this->horarioAutorizacao('horario_fim');
+        if (!$horarioInicio || !$horarioFim || $horarioInicio === $horarioFim) {
+            flash('error', 'Informe um horario de acesso valido, com inicio e fim diferentes.');
+            redirect('/professor/orientandos-bolsistas');
+        }
+
+        $diasPermitidos = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'];
+        $diasSemana = array_values(array_unique(array_intersect(
+            $diasPermitidos,
+            array_map(static fn ($dia): string => mb_strtolower(trim((string) $dia)), (array) ($_POST['dias_semana'] ?? []))
+        )));
+        $finalidade = trim((string) ($_POST['finalidade'] ?? ''));
+        if ($finalidade === '') {
+            flash('error', 'Informe a finalidade da autorizacao.');
+            redirect('/professor/orientandos-bolsistas');
+        }
+        if (mb_strlen($finalidade) > 800) {
+            flash('error', 'A finalidade deve ter no maximo 800 caracteres.');
+            redirect('/professor/orientandos-bolsistas');
+        }
+
+        $numeroAutorizacao = mb_substr(trim((string) ($_POST['numero_autorizacao'] ?? '')), 0, 40);
+        if ($numeroAutorizacao === '') {
+            $numeroAutorizacao = sprintf('SGRP-%s-P%d', date('Ymd-His'), $professorId);
+        }
+        $baixarDocumento = (string) ($_POST['acao'] ?? '') === 'salvar_baixar';
+        $documento = null;
+        if ($baixarDocumento) {
+            try {
+                $documento = (new AutorizacaoAcessoDocumento())->gerar([
+                    'numero_autorizacao' => $numeroAutorizacao,
+                    'professor_nome' => (string) (currentUser()['nome'] ?? ''),
+                    'professor_email' => (string) (currentUser()['email'] ?? ''),
+                    'sala_nome' => (string) ($sala['nome'] ?? ''),
+                    'sala_codigo' => (string) ($sala['codigo'] ?? ''),
+                    'finalidade' => $finalidade,
+                    'dias_acesso' => $this->diasAutorizacaoParaDocumento($diasSemana),
+                    'horario_acesso' => substr($horarioInicio, 0, 5) . ' às ' . substr($horarioFim, 0, 5),
+                    'inicio_em' => $inicio->format('d/m/Y'),
+                    'expira_em' => $expira?->format('d/m/Y') ?? 'Sem expiração',
+                    'data_solicitacao' => date('d/m/Y'),
+                    'data_autorizacao' => date('d/m/Y'),
+                    'bolsistas' => $bolsistas,
+                ]);
+            } catch (\Throwable $exception) {
+                systemLog('error', 'Professor', 'Falha ao gerar autorizacao de acesso em Word.', [
+                    'professor_id' => $professorId,
+                    'erro' => $exception->getMessage(),
+                ]);
+                flash('error', $exception->getMessage());
+                redirect('/professor/orientandos-bolsistas');
+            }
+        }
+
+        $pdo = Database::pdo();
+        $pdo->beginTransaction();
+        try {
+            $permissaoModel = new PermissaoSala();
+            foreach ($bolsistas as $bolsista) {
+                $permissaoModel->create([
+                    'usuario_id' => (int) $bolsista['id'],
+                    'sala_id' => $salaId,
+                    'acesso_total' => 0,
+                    'autorizado_por' => $professorId,
+                    'inicio_autorizacao' => $inicio->format('Y-m-d H:i:s'),
+                    'expira_em' => $expira?->format('Y-m-d H:i:s'),
+                    'horario_inicio' => $horarioInicio,
+                    'horario_fim' => $horarioFim,
+                    'dias_semana' => $diasSemana ? implode(', ', $diasSemana) : null,
+                    'observacao' => $finalidade,
+                    'situacao' => 'ativa',
+                ]);
+            }
+            $pdo->commit();
+        } catch (\Throwable $exception) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            if (is_array($documento) && !empty($documento['path'])) {
+                @unlink((string) $documento['path']);
+            }
+            systemLog('error', 'Professor', 'Falha ao salvar autorizacoes de bolsistas.', [
+                'professor_id' => $professorId,
+                'bolsista_ids' => $bolsistaIds,
+                'sala_id' => $salaId,
+                'erro' => $exception->getMessage(),
+            ]);
+            flash('error', 'Nao foi possivel salvar as autorizacoes. Nenhuma alteracao foi realizada.');
+            redirect('/professor/orientandos-bolsistas');
+        }
+
+        audit('Professor', 'autorizacao_bolsistas', 'Autorizacao de acesso criada para bolsistas.', [
+            'professor_id' => $professorId,
+            'bolsista_ids' => $bolsistaIds,
             'sala_id' => $salaId,
-            'acesso_total' => 0,
-            'autorizado_por' => $professorId,
-            'inicio_autorizacao' => $inicio?->format('Y-m-d H:i:s'),
+            'inicio_autorizacao' => $inicio->format('Y-m-d H:i:s'),
             'expira_em' => $expira?->format('Y-m-d H:i:s'),
-            'dias_semana' => !empty($_POST['dias_semana']) ? implode(', ', (array) $_POST['dias_semana']) : null,
-            'observacao' => $_POST['observacao'] ?? null,
-            'situacao' => 'ativa',
+            'horario_inicio' => $horarioInicio,
+            'horario_fim' => $horarioFim,
+            'dias_semana' => $diasSemana,
+            'documento_gerado' => $baixarDocumento,
         ]);
-        flash('success', 'Chave liberada para o bolsista.');
+
+        if (is_array($documento)) {
+            (new AutorizacaoAcessoDocumento())->enviarDownload($documento);
+        }
+
+        flash('success', count($bolsistas) . ' autorizacao(oes) de chave criada(s).');
         redirect('/professor/orientandos-bolsistas');
     }
 
@@ -217,11 +340,28 @@ class ProfessorController extends Controller
             flash('error', 'VocÃª estÃ¡ temporariamente bloqueado para retirar chaves atÃ© ' . date('d/m/Y H:i', strtotime($bloqueio['fim_em'])) . '.');
             redirect($retorno);
         }
+        $usuarioAtual = currentUser();
         $salaId = (int) $_POST['sala_id'];
-        if (!(new Sala())->chavePodeSerRetirada($salaId, currentUser())) {
+        if (!(new Sala())->chavePodeSerRetirada($salaId, $usuarioAtual)) {
             flash('error', 'Esta chave nÃ£o estÃ¡ disponÃ­vel para retirada.');
             redirect($retorno);
         }
+
+        $retiradaService = new RetiradaChaveService();
+        if ($usuarioAtual && $retiradaService->exigeConfirmacaoPortaria($usuarioAtual)) {
+            try {
+                $solicitacao = $retiradaService->solicitar($usuarioAtual, $salaId, $_POST['observacao'] ?? null);
+            } catch (\RuntimeException $error) {
+                flash('error', $error->getMessage());
+                redirect($retorno);
+            }
+            $_SESSION['_codigo_retirada'] = $solicitacao;
+            flash('success', !empty($solicitacao['exige_codigo_temporario'])
+                ? 'Solicitação enviada à Portaria. Apresente a senha temporária de 4 dígitos para receber a chave.'
+                : 'Solicitação enviada à Portaria. Aguarde o agente aceitar ou recusar a entrega.');
+            redirect($retorno);
+        }
+
         (new Movimentacao())->create([
             'usuario_id' => currentUser()['id'],
             'sala_id' => $salaId,
@@ -232,7 +372,7 @@ class ProfessorController extends Controller
             'registrado_por_usuario_id' => currentUser()['id'],
             'observacao' => $_POST['observacao'] ?? null,
         ]);
-        flash('success', 'Retirada registrada.');
+        flash('success', 'Retirada registrada automaticamente. Este perfil não exige senha temporária nem confirmação da Portaria.');
         redirect($retorno);
     }
 
@@ -358,7 +498,12 @@ class ProfessorController extends Controller
             redirect('/professor/reservas-salas');
         }
         $ignoreId = isset($_POST['id']) ? (int) $_POST['id'] : null;
-        if ((new Reserva())->hasConflict($salaId, $inicio->format('Y-m-d H:i:s'), $fim->format('Y-m-d H:i:s'), $ignoreId)) {
+        if (!(new Reserva())->salaDisponivelParaReserva(
+            $salaId,
+            $inicio->format('Y-m-d H:i:s'),
+            $fim->format('Y-m-d H:i:s'),
+            $ignoreId
+        )) {
             flash('error', 'Ja existe reserva pendente ou confirmada para esta sala no periodo informado.');
             redirect('/professor/reservas-salas');
         }
@@ -367,6 +512,42 @@ class ProfessorController extends Controller
     private function criarDataHora(string $valor): ?\DateTimeImmutable
     {
         return \parseDateTimeInput($valor);
+    }
+
+    private function horarioAutorizacao(string $prefixo): ?string
+    {
+        $horaTexto = trim((string) ($_POST[$prefixo . '_hora'] ?? ''));
+        $minutoTexto = trim((string) ($_POST[$prefixo . '_minuto'] ?? ''));
+        if (!ctype_digit($horaTexto) || !ctype_digit($minutoTexto)) {
+            return null;
+        }
+
+        $hora = (int) $horaTexto;
+        $minuto = (int) $minutoTexto;
+        if ($hora < 0 || $hora > 23 || $minuto < 0 || $minuto > 59) {
+            return null;
+        }
+
+        return sprintf('%02d:%02d:00', $hora, $minuto);
+    }
+
+    private function diasAutorizacaoParaDocumento(array $dias): string
+    {
+        if (!$dias) {
+            return 'Todos os dias';
+        }
+
+        $rotulos = [
+            'segunda' => 'Segunda',
+            'terca' => 'Terça',
+            'quarta' => 'Quarta',
+            'quinta' => 'Quinta',
+            'sexta' => 'Sexta',
+            'sabado' => 'Sábado',
+            'domingo' => 'Domingo',
+        ];
+
+        return implode(', ', array_map(static fn (string $dia): string => $rotulos[$dia] ?? $dia, $dias));
     }
 }
 

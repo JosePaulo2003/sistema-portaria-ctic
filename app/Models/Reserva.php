@@ -116,6 +116,22 @@ class Reserva extends Model
         return (int) $stmt->fetchColumn() > 0;
     }
 
+    public function deleteMany(array $ids): int
+    {
+        $ids = array_values(array_unique(array_filter(
+            array_map('intval', $ids),
+            static fn (int $id): bool => $id > 0
+        )));
+        if (!$ids) {
+            return 0;
+        }
+
+        $placeholders = implode(', ', array_fill(0, count($ids), '?'));
+        $stmt = $this->db()->prepare("DELETE FROM reservas WHERE id IN ({$placeholders})");
+        $stmt->execute($ids);
+        return $stmt->rowCount();
+    }
+
     public function hasConflict(int $salaId, string $inicio, string $fim, ?int $ignoreId = null): bool
     {
         $sql = 'SELECT COUNT(*) FROM reservas
@@ -130,6 +146,26 @@ class Reserva extends Model
         $stmt = $this->db()->prepare($sql);
         $stmt->execute($params);
         return (int) $stmt->fetchColumn() > 0;
+    }
+
+    /**
+     * Verifica a agenda da sala no período solicitado.
+     *
+     * Uma chave retirada agora não bloqueia uma reserva futura: a movimentação
+     * da chave e a agenda são controles diferentes. A indisponibilidade ocorre
+     * somente quando a sala está bloqueada/em manutenção ou quando existe uma
+     * reserva pendente/confirmada que realmente se sobrepõe ao intervalo.
+     */
+    public function salaDisponivelParaReserva(int $salaId, string $inicio, string $fim, ?int $ignoreId = null): bool
+    {
+        $stmt = $this->db()->prepare('SELECT situacao FROM salas WHERE id = ? LIMIT 1');
+        $stmt->execute([$salaId]);
+        $situacao = $stmt->fetchColumn();
+        if (!in_array($situacao, ['disponivel', 'fechada'], true)) {
+            return false;
+        }
+
+        return !$this->hasConflict($salaId, $inicio, $fim, $ignoreId);
     }
 
     public function pendentes(): array
@@ -149,12 +185,6 @@ class Reserva extends Model
         $stmt = $this->db()->prepare('SELECT situacao FROM salas WHERE id = ? LIMIT 1');
         $stmt->execute([(int) $reserva['sala_id']]);
         if ($stmt->fetchColumn() !== 'disponivel') {
-            return false;
-        }
-
-        $stmt = $this->db()->prepare('SELECT COUNT(*) FROM movimentacoes WHERE sala_id = ? AND situacao = "aberta"');
-        $stmt->execute([(int) $reserva['sala_id']]);
-        if ((int) $stmt->fetchColumn() > 0) {
             return false;
         }
 

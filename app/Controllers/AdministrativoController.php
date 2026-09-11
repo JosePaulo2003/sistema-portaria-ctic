@@ -113,31 +113,11 @@ class AdministrativoController extends Controller
 
     private function salaDisponivelParaReserva(int $salaId, \DateTimeImmutable $inicio, \DateTimeImmutable $fim): bool
     {
-        $pdo = Database::pdo();
-        $stmt = $pdo->prepare('SELECT situacao FROM salas WHERE id = ? LIMIT 1');
-        $stmt->execute([$salaId]);
-        $situacao = $stmt->fetchColumn();
-        if (!in_array($situacao, ['disponivel', 'fechada'], true)) {
-            return false;
-        }
-
-        $stmt = $pdo->prepare('SELECT COUNT(*) FROM movimentacoes WHERE sala_id = ? AND situacao = "aberta"');
-        $stmt->execute([$salaId]);
-        if ((int) $stmt->fetchColumn() > 0) {
-            return false;
-        }
-
-        $stmt = $pdo->prepare(
-            'SELECT COUNT(*) FROM reservas
-             WHERE sala_id = ? AND situacao IN ("pendente", "confirmada")
-               AND inicio_em < ? AND fim_em > ?'
-        );
-        $stmt->execute([
+        return (new Reserva())->salaDisponivelParaReserva(
             $salaId,
-            $fim->format('Y-m-d H:i:s'),
             $inicio->format('Y-m-d H:i:s'),
-        ]);
-        return (int) $stmt->fetchColumn() === 0;
+            $fim->format('Y-m-d H:i:s')
+        );
     }
 
     private function criarDataHora(string $valor): ?\DateTimeImmutable

@@ -6,7 +6,7 @@
 </section>
 
 <form method="post" action="<?= e(baseUrl('/secretario/cursos')) ?>" class="card form-grid">
-    <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
+    <?= csrfField() ?>
     <label>Nome do curso
         <input name="nome" required placeholder="Ex.: Licenciatura em Computacao">
     </label>
@@ -39,7 +39,7 @@
                 <tr>
                     <td colspan="4">
                         <form method="post" action="<?= e(baseUrl('/secretario/cursos/atualizar')) ?>" class="inline-form row-edit-form">
-                            <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
+                            <?= csrfField() ?>
                             <input type="hidden" name="id" value="<?= e($curso['id']) ?>">
                             <label>Curso
                                 <input name="nome" required value="<?= e($curso['nome']) ?>" aria-label="Nome do curso">
@@ -56,7 +56,7 @@
                             <button class="button" type="submit">Salvar</button>
                         </form>
                         <form method="post" action="<?= e(baseUrl('/secretario/cursos/excluir')) ?>" class="inline-actions">
-                            <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
+                            <?= csrfField() ?>
                             <input type="hidden" name="id" value="<?= e($curso['id']) ?>">
                             <button class="button button--danger" data-confirm="Excluir este curso? Se houver vinculo, ele sera inativado." type="submit">Excluir</button>
                         </form>

@@ -13,15 +13,29 @@ classDiagram
         INT id PK
         VARCHAR_150 nome
         VARCHAR_190 email UK
+        VARCHAR_80 matricula
         VARCHAR_255 senha_hash
         INT perfil_id FK
         ENUM situacao
+        DATETIME acesso_expira_em
         VARCHAR_255 foto_perfil_url
         INT professor_indicador_id FK
         VARCHAR_255 projeto_pesquisa
+        INT curso_id FK
         DATETIME criado_em
         DATETIME atualizado_em
         DATETIME ultimo_login_em
+    }
+
+    class RecuperacaoSenha {
+        BIGINT id PK
+        INT usuario_id FK
+        CHAR_64 token_hash UK
+        DATETIME expira_em
+        DATETIME usado_em
+        TINYINT tentativas
+        CHAR_64 solicitado_ip_hash
+        DATETIME criado_em
     }
 
     class Sala {
@@ -62,6 +76,7 @@ classDiagram
     class Movimentacao {
         INT id PK
         INT usuario_id FK
+        VARCHAR_180 usuario_nome_manual
         INT sala_id FK
         INT item_portaria_id FK
         ENUM tipo_movimentacao
@@ -78,9 +93,12 @@ classDiagram
         INT id PK
         INT usuario_id FK
         INT sala_id FK
+        TINYINT acesso_total
         INT autorizado_por FK
         DATETIME inicio_autorizacao
         DATETIME expira_em
+        TIME horario_inicio
+        TIME horario_fim
         VARCHAR_120 dias_semana
         TEXT observacao
         ENUM situacao
@@ -106,6 +124,7 @@ classDiagram
     }
 
     Perfil "1" --> "0..*" Usuario : perfil_id
+    Usuario "1" --> "0..*" RecuperacaoSenha : usuario_id
     Usuario "1" --> "0..*" Reserva : usuario_id
     Sala "1" --> "0..*" Reserva : sala_id
     Usuario "1" --> "0..*" Movimentacao : usuario_id

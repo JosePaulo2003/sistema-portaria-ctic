@@ -4,7 +4,10 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Controller;
+use App\Models\RecuperacaoSenha;
 use App\Models\User;
+use App\Services\EmailService;
+use Throwable;
 
 // Autentica usuários e protege o login contra tentativas repetidas.
 class AuthController extends Controller
@@ -59,15 +62,96 @@ class AuthController extends Controller
         }
 
         $user = (new User())->findByEmail($email);
-        systemLog('warning', 'Auth', 'Solicitacao de recuperacao de senha.', [
-            'email' => $email,
-            'usuario_id_solicitado' => $user['id'] ?? null,
-            'perfil' => $user['perfil_nome'] ?? null,
-            'situacao' => $user['situacao'] ?? null,
-        ]);
+        if ($user && ($user['situacao'] ?? '') === 'ativo') {
+            $recuperacoes = new RecuperacaoSenha();
+            $ipHash = hash('sha256', (string) ($_SERVER['REMOTE_ADDR'] ?? 'local'));
 
-        flash('success', 'Solicitacao registrada. Procure o CTIC/CESIT para validar sua identidade e receber a redefinicao.');
+            if ($recuperacoes->podeSolicitar((int) $user['id'], $ipHash)) {
+                $codigo = $this->gerarCodigoRecuperacao();
+                $recuperacaoId = $recuperacoes->criar((int) $user['id'], $this->normalizarCodigo($codigo), $ipHash);
+
+                try {
+                    (new EmailService())->enviarRecuperacaoSenha($user, $codigo);
+                    systemLog('info', 'Auth', 'E-mail de recuperacao de senha enviado.', [
+                        'usuario_id_solicitado' => (int) $user['id'],
+                    ]);
+                } catch (Throwable $exception) {
+                    $recuperacoes->invalidar($recuperacaoId);
+                    systemLog('error', 'Auth', 'Falha ao enviar e-mail de recuperacao de senha.', [
+                        'usuario_id_solicitado' => (int) $user['id'],
+                        'erro' => $exception->getMessage(),
+                    ]);
+                }
+            } else {
+                systemLog('warning', 'Auth', 'Limite de recuperacao de senha atingido.', [
+                    'usuario_id_solicitado' => (int) $user['id'],
+                ]);
+            }
+        }
+
+        $_SESSION['_recuperacao_email'] = $email;
+        flash('success', 'Se existir uma conta ativa para esse e-mail, enviaremos um código de redefinição válido por 30 minutos.');
+        redirect('/redefinir-senha');
+    }
+
+    public function resetForm(): void
+    {
+        if (currentUser()) {
+            redirect(moduleForProfile(userProfile() ?? ''));
+        }
+
+        $this->view('auth/reset', [
+            'title' => 'Redefinir senha',
+            'email' => (string) ($_SESSION['_recuperacao_email'] ?? ''),
+        ], 'auth');
+    }
+
+    public function reset(): void
+    {
+        verifyCsrf();
+        $email = mb_strtolower(trim((string) ($_POST['email'] ?? '')));
+        $codigo = $this->normalizarCodigo((string) ($_POST['codigo'] ?? ''));
+        $senha = (string) ($_POST['senha'] ?? '');
+        $confirmacao = (string) ($_POST['senha_confirmacao'] ?? '');
+
+        $_SESSION['_recuperacao_email'] = $email;
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL) || !preg_match('/\A[A-Z0-9]{8}\z/', $codigo)) {
+            flash('error', 'Confira o e-mail e o código recebido.');
+            redirect('/redefinir-senha');
+        }
+        if (mb_strlen($senha) < 8 || strlen($senha) > 255 || str_contains($senha, "\0")) {
+            flash('error', 'A nova senha deve ter entre 8 e 255 caracteres.');
+            redirect('/redefinir-senha');
+        }
+        if (!hash_equals($senha, $confirmacao)) {
+            flash('error', 'A confirmação não corresponde à nova senha.');
+            redirect('/redefinir-senha');
+        }
+
+        if (!(new RecuperacaoSenha())->redefinir($email, $codigo, password_hash($senha, PASSWORD_DEFAULT))) {
+            flash('error', 'Código inválido, expirado ou com o limite de tentativas atingido. Solicite um novo código se necessário.');
+            redirect('/redefinir-senha');
+        }
+
+        unset($_SESSION['_recuperacao_email']);
+        systemLog('info', 'Auth', 'Senha redefinida com código enviado por e-mail.');
+        flash('success', 'Senha redefinida com sucesso. Você já pode entrar.');
         redirect('/login');
+    }
+
+    private function gerarCodigoRecuperacao(): string
+    {
+        $alfabeto = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        $codigo = '';
+        for ($i = 0; $i < 8; $i++) {
+            $codigo .= $alfabeto[random_int(0, strlen($alfabeto) - 1)];
+        }
+        return substr($codigo, 0, 4) . '-' . substr($codigo, 4);
+    }
+
+    private function normalizarCodigo(string $codigo): string
+    {
+        return strtoupper((string) preg_replace('/[^a-zA-Z0-9]/', '', trim($codigo)));
     }
 
     public function login(): void
@@ -142,6 +226,7 @@ class AuthController extends Controller
                 ? strtotime((string) $user['acesso_expira_em'])
                 : null,
         ];
+        refreshAuthSessionCookie();
 
         if (password_needs_rehash($user['senha_hash'], PASSWORD_DEFAULT)) {
             $userModel->update((int) $user['id'], ['senha_hash' => password_hash($password, PASSWORD_DEFAULT)]);

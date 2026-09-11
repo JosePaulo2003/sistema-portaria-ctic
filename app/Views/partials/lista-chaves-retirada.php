@@ -1,3 +1,16 @@
+<?php
+$perfilRetirada = comparableProfile((string) (currentUser()['perfil_nome'] ?? ''));
+$exigeCodigoTemporario = in_array($perfilRetirada, array_map('comparableProfile', ['Aluno', 'Aluno Bolsista', 'Estagiário']), true);
+$exigeConfirmacaoPortaria = $exigeCodigoTemporario;
+?>
+<div class="alert alert-info withdrawal-permission-notice">
+    <strong>Permissão e solicitação obrigatórias:</strong> para solicitar ou renovar o acesso a qualquer chave, compareça presencialmente ao CTIC-CESIT. Aluno, Estagiário e Bolsista precisam entrar na própria conta e solicitar a retirada; a Portaria não pode iniciar o pedido em nome deles.
+</div>
+<?php if ($exigeCodigoTemporario): ?>
+    <p class="withdrawal-instruction">Confirme sua senha normal para solicitar. Depois, apresente a senha temporária de 4 dígitos ao agente de Portaria.</p>
+<?php else: ?>
+    <p class="withdrawal-instruction">Este perfil tem retirada automática: com uma permissão válida, basta confirmar a senha normal para registrar a retirada.</p>
+<?php endif; ?>
 <div class="card table-wrap">
     <table>
         <thead>
@@ -21,11 +34,11 @@
                     <td>
                         <?php if (!empty($s['chave_retiravel'])): ?>
                             <form method="post" action="<?= e($retiradaAction) ?>" class="inline-form withdrawal-row">
-                                <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
+                                <?= csrfField() ?>
                                 <input type="hidden" name="sala_id" value="<?= e($s['id']) ?>">
                                 <input type="text" name="observacao" placeholder="<?= e($observacaoPlaceholder ?? 'Opcional') ?>">
-                                <input type="password" name="senha_confirmacao" placeholder="Confirme sua senha" required autocomplete="current-password">
-                                <button class="button" type="submit">Retirar chave</button>
+                                <input type="password" name="senha_confirmacao" placeholder="Senha normal da sua conta" required autocomplete="current-password">
+                                <button class="button" type="submit"><?= $exigeConfirmacaoPortaria ? 'Solicitar retirada' : 'Retirar chave' ?></button>
                             </form>
                         <?php else: ?>
                             <span class="muted"><?= e($s['chave_motivo'] ?? 'Chave indisponivel no momento.') ?></span>
@@ -39,7 +52,7 @@
                 </tr>
             <?php endforeach; ?>
             <?php if (!$salas): ?>
-                <tr><td colspan="4">Nenhuma chave encontrada para retirada no momento.</td></tr>
+                <tr><td colspan="4">Nenhuma permissão de chave ativa. Compareça ao CTIC-CESIT para solicitar o acesso.</td></tr>
             <?php endif; ?>
         </tbody>
     </table>

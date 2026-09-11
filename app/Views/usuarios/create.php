@@ -3,6 +3,7 @@
     <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
     <label>Nome<input name="nome" required></label>
     <label>E-mail<input type="email" name="email" required></label>
+    <label>Matricula<input name="matricula" maxlength="80"></label>
     <label>Senha<input type="password" name="senha" minlength="8" required></label>
     <label>Perfil
         <select name="perfil_id">

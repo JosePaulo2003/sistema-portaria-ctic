@@ -13,7 +13,10 @@ class Movimentacao extends Model
     public function abertas(): array
     {
         return $this->db()->query(
-            'SELECT m.*, u.nome AS usuario_nome, u.foto_perfil_url, s.nome AS sala_nome, i.nome AS item_nome
+            'SELECT m.*,
+                    COALESCE(NULLIF(TRIM(m.usuario_nome_manual), ""), u.nome) AS usuario_nome,
+                    CASE WHEN NULLIF(TRIM(m.usuario_nome_manual), "") IS NULL THEN u.foto_perfil_url ELSE NULL END AS foto_perfil_url,
+                    s.nome AS sala_nome, i.nome AS item_nome
              FROM movimentacoes m
              JOIN usuarios u ON u.id = m.usuario_id
              LEFT JOIN salas s ON s.id = m.sala_id
@@ -26,7 +29,10 @@ class Movimentacao extends Model
     public function historico(int $limit = 100): array
     {
         $stmt = $this->db()->prepare(
-            'SELECT m.*, u.nome AS usuario_nome, u.foto_perfil_url, s.nome AS sala_nome, i.nome AS item_nome
+            'SELECT m.*,
+                    COALESCE(NULLIF(TRIM(m.usuario_nome_manual), ""), u.nome) AS usuario_nome,
+                    CASE WHEN NULLIF(TRIM(m.usuario_nome_manual), "") IS NULL THEN u.foto_perfil_url ELSE NULL END AS foto_perfil_url,
+                    s.nome AS sala_nome, i.nome AS item_nome
              FROM movimentacoes m
              JOIN usuarios u ON u.id = m.usuario_id
              LEFT JOIN salas s ON s.id = m.sala_id
@@ -46,7 +52,7 @@ class Movimentacao extends Model
 
         $busca = trim((string) ($filters['busca'] ?? ''));
         if ($busca !== '') {
-            $where[] = '(u.nome LIKE ? OR s.nome LIKE ? OR i.nome LIKE ? OR m.observacao LIKE ? OR m.tipo_movimentacao LIKE ?)';
+            $where[] = '(COALESCE(NULLIF(m.usuario_nome_manual, ""), u.nome) LIKE ? OR s.nome LIKE ? OR i.nome LIKE ? OR m.observacao LIKE ? OR m.tipo_movimentacao LIKE ?)';
             $like = '%' . $busca . '%';
             array_push($params, $like, $like, $like, $like, $like);
         }
@@ -75,7 +81,10 @@ class Movimentacao extends Model
             $params[] = $fim;
         }
 
-        $sql = 'SELECT m.*, u.nome AS usuario_nome, u.foto_perfil_url, s.nome AS sala_nome, i.nome AS item_nome
+        $sql = 'SELECT m.*,
+                       COALESCE(NULLIF(TRIM(m.usuario_nome_manual), ""), u.nome) AS usuario_nome,
+                       CASE WHEN NULLIF(TRIM(m.usuario_nome_manual), "") IS NULL THEN u.foto_perfil_url ELSE NULL END AS foto_perfil_url,
+                       s.nome AS sala_nome, i.nome AS item_nome
                 FROM movimentacoes m
                 JOIN usuarios u ON u.id = m.usuario_id
                 LEFT JOIN salas s ON s.id = m.sala_id
@@ -104,7 +113,7 @@ class Movimentacao extends Model
 
         $busca = trim((string) ($filtros['busca'] ?? ''));
         if ($busca !== '') {
-            $where[] = '(u.nome LIKE ? OR s.nome LIKE ? OR s.codigo LIKE ? OR i.nome LIKE ? OR i.codigo LIKE ? OR m.observacao LIKE ? OR registrador.nome LIKE ?)';
+            $where[] = '(COALESCE(NULLIF(m.usuario_nome_manual, ""), u.nome) LIKE ? OR s.nome LIKE ? OR s.codigo LIKE ? OR i.nome LIKE ? OR i.codigo LIKE ? OR m.observacao LIKE ? OR registrador.nome LIKE ?)';
             $like = '%' . $busca . '%';
             array_push($params, $like, $like, $like, $like, $like, $like, $like);
         }
@@ -136,8 +145,8 @@ class Movimentacao extends Model
         }
 
         $sql = 'SELECT m.*,
-                       u.nome AS usuario_nome,
-                       p.nome AS usuario_perfil,
+                       COALESCE(NULLIF(TRIM(m.usuario_nome_manual), ""), u.nome) AS usuario_nome,
+                       CASE WHEN NULLIF(TRIM(m.usuario_nome_manual), "") IS NULL THEN p.nome ELSE "Pessoa sem cadastro" END AS usuario_perfil,
                        s.nome AS sala_nome,
                        s.codigo AS sala_codigo,
                        i.nome AS item_nome,
@@ -171,17 +180,21 @@ class Movimentacao extends Model
                 FROM usuarios u
                 WHERE u.situacao = 'ativo'
                 UNION ALL
-                SELECT 2 AS ordem, 'Sala' AS tipo, TRIM(s.nome) AS valor
+                SELECT 2 AS ordem, 'Pessoa sem cadastro' AS tipo, TRIM(m.usuario_nome_manual) AS valor
+                FROM movimentacoes m
+                WHERE NULLIF(TRIM(m.usuario_nome_manual), '') IS NOT NULL
+                UNION ALL
+                SELECT 3 AS ordem, 'Sala' AS tipo, TRIM(s.nome) AS valor
                 FROM salas s
                 UNION ALL
-                SELECT 3 AS ordem, 'Código de sala' AS tipo, TRIM(s.codigo) AS valor
+                SELECT 4 AS ordem, 'Código de sala' AS tipo, TRIM(s.codigo) AS valor
                 FROM salas s
                 WHERE s.codigo IS NOT NULL
                 UNION ALL
-                SELECT 4 AS ordem, 'Item' AS tipo, TRIM(i.nome) AS valor
+                SELECT 5 AS ordem, 'Item' AS tipo, TRIM(i.nome) AS valor
                 FROM itens_portaria i
                 UNION ALL
-                SELECT 5 AS ordem, 'Código de item' AS tipo, TRIM(i.codigo) AS valor
+                SELECT 6 AS ordem, 'Código de item' AS tipo, TRIM(i.codigo) AS valor
                 FROM itens_portaria i
                 WHERE i.codigo IS NOT NULL
              ) fonte
@@ -209,8 +222,8 @@ class Movimentacao extends Model
 
         $stmt = $this->db()->prepare(
             'SELECT m.*,
-                    u.nome AS usuario_nome,
-                    p.nome AS usuario_perfil,
+                    COALESCE(NULLIF(TRIM(m.usuario_nome_manual), ""), u.nome) AS usuario_nome,
+                    CASE WHEN NULLIF(TRIM(m.usuario_nome_manual), "") IS NULL THEN p.nome ELSE "Pessoa sem cadastro" END AS usuario_perfil,
                     s.nome AS sala_nome,
                     s.codigo AS sala_codigo,
                     s.bloco AS sala_bloco,
@@ -245,7 +258,8 @@ class Movimentacao extends Model
 
     public function paraCalendario(string $inicio, string $fim, ?int $salaId = null): array
     {
-        $sql = 'SELECT m.*, u.nome AS usuario_nome, s.nome AS sala_nome, s.codigo AS sala_codigo
+        $sql = 'SELECT m.*, COALESCE(NULLIF(TRIM(m.usuario_nome_manual), ""), u.nome) AS usuario_nome,
+                       s.nome AS sala_nome, s.codigo AS sala_codigo
                 FROM movimentacoes m
                 JOIN usuarios u ON u.id = m.usuario_id
                 JOIN salas s ON s.id = m.sala_id
@@ -269,8 +283,8 @@ class Movimentacao extends Model
     {
         $stmt = $this->db()->prepare(
             'SELECT m.*,
-                    u.nome AS usuario_nome,
-                    u.email AS usuario_email,
+                    COALESCE(NULLIF(TRIM(m.usuario_nome_manual), ""), u.nome) AS usuario_nome,
+                    CASE WHEN NULLIF(TRIM(m.usuario_nome_manual), "") IS NULL THEN u.email ELSE NULL END AS usuario_email,
                     devolvedor.nome AS devolvido_por_nome,
                     registrador.nome AS registrado_por_nome,
                     s.nome AS sala_nome,

@@ -290,6 +290,7 @@ class User extends Model
         $this->update($id, [
             'nome' => 'Usuário removido #' . $id,
             'email' => 'removido_' . $id . '@sgrp.local',
+            'matricula' => null,
             'senha_hash' => password_hash(bin2hex(random_bytes(16)), PASSWORD_DEFAULT),
             'situacao' => 'inativo',
             'acesso_expira_em' => null,

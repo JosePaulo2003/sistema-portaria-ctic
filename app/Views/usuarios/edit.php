@@ -15,6 +15,10 @@
         <input type="email" name="email" required value="<?= e($usuario['email']) ?>">
     </label>
 
+    <label>Matricula
+        <input name="matricula" maxlength="80" value="<?= e($usuario['matricula'] ?? '') ?>">
+    </label>
+
     <label>Nova senha
         <input type="password" name="senha" minlength="8" placeholder="Deixe em branco para manter">
     </label>

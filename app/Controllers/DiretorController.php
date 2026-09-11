@@ -330,8 +330,11 @@ class DiretorController extends Controller
             if (in_array($situacao, ['aberta', 'finalizada', 'cancelada'], true)) {
                 $resumo[$situacao . 's']++;
             }
-            if (!empty($movimentacao['usuario_id'])) {
-                $usuarios[(int) $movimentacao['usuario_id']] = true;
+            $nomeManual = trim((string) ($movimentacao['usuario_nome_manual'] ?? ''));
+            if ($nomeManual !== '') {
+                $usuarios['manual:' . comparableProfile($nomeManual)] = true;
+            } elseif (!empty($movimentacao['usuario_id'])) {
+                $usuarios['usuario:' . (int) $movimentacao['usuario_id']] = true;
             }
             if (!empty($movimentacao['retirada_em']) && !empty($movimentacao['devolucao_real_em'])) {
                 $retirada = strtotime((string) $movimentacao['retirada_em']);
@@ -435,7 +438,10 @@ class DiretorController extends Controller
         $ranking = [];
         foreach ($movimentacoes as $movimentacao) {
             if ($tipo === 'usuario') {
-                $chave = 'usuario-' . (int) ($movimentacao['usuario_id'] ?? 0);
+                $nomeManual = trim((string) ($movimentacao['usuario_nome_manual'] ?? ''));
+                $chave = $nomeManual !== ''
+                    ? 'manual-' . comparableProfile($nomeManual)
+                    : 'usuario-' . (int) ($movimentacao['usuario_id'] ?? 0);
                 $rotulo = (string) ($movimentacao['usuario_nome'] ?? 'Usuário não identificado');
             } elseif (!empty($movimentacao['sala_id'])) {
                 $chave = 'sala-' . (int) $movimentacao['sala_id'];

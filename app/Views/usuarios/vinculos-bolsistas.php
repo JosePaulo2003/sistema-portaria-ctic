@@ -6,7 +6,7 @@
 <section class="card form-card">
     <h2>Atualizar vinculo</h2>
     <form method="post" action="<?= e(baseUrl($retorno)) ?>" class="form-grid">
-        <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>
+        <?= csrfField() ?>
         <label>
             Bolsista ou estagiario
             <select name="bolsista_id" required>

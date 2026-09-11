@@ -26,6 +26,177 @@ document.addEventListener('DOMContentLoaded', () => {
 
   browserAlerts.forEach((message) => window.alert(message));
 
+  const withdrawalCenter = document.querySelector('[data-withdrawal-alert-center]');
+  if (withdrawalCenter) {
+    const listUrl = withdrawalCenter.getAttribute('data-list-url');
+    const itemsContainer = withdrawalCenter.querySelector('[data-withdrawal-alert-items]');
+    const countNode = withdrawalCenter.querySelector('[data-withdrawal-alert-count]');
+    const centerToggle = withdrawalCenter.querySelector('[data-withdrawal-center-toggle]');
+    const groupFilter = withdrawalCenter.querySelector('[data-withdrawal-group-filter]');
+    let lastSignature = '';
+    let latestPayload = null;
+
+    const storageGet = (key, fallback = '') => {
+      try { return window.sessionStorage.getItem(key) ?? fallback; } catch (_) { return fallback; }
+    };
+    const storageSet = (key, value) => {
+      try { window.sessionStorage.setItem(key, value); } catch (_) { /* armazenamento indisponível */ }
+    };
+    const minimizedIds = () => {
+      try {
+        const stored = JSON.parse(storageGet('sgrp-retiradas-minimizadas', '[]'));
+        return new Set(Array.isArray(stored) ? stored.map(String) : []);
+      } catch (_) {
+        return new Set();
+      }
+    };
+    const saveMinimizedIds = (ids) => storageSet('sgrp-retiradas-minimizadas', JSON.stringify(Array.from(ids)));
+    const formatDateTime = (value) => {
+      const match = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})/);
+      return match ? `${match[3]}/${match[2]}/${match[1]} às ${match[4]}:${match[5]}` : 'horário não informado';
+    };
+    const appendText = (parent, tag, className, value) => {
+      const node = document.createElement(tag);
+      if (className) node.className = className;
+      node.textContent = value;
+      parent.appendChild(node);
+      return node;
+    };
+    const hiddenInput = (name, value) => {
+      const input = document.createElement('input');
+      input.type = 'hidden'; input.name = name; input.value = value;
+      if (name === '_csrf') input.dataset.csrfToken = '';
+      return input;
+    };
+
+    const renderWithdrawalAlerts = (payload) => {
+      const requests = Array.isArray(payload.solicitacoes) ? payload.solicitacoes : [];
+      latestPayload = payload;
+      const selectedGroup = groupFilter?.value || '';
+      if (groupFilter) {
+        const existingGroups = new Set(Array.from(groupFilter.options).slice(1).map((option) => option.value));
+        const availableGroups = Array.from(new Set(requests.map((item) => item.contexto?.perfil_nome || 'Perfil não informado'))).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+        if (availableGroups.some((group) => !existingGroups.has(group)) || existingGroups.size !== availableGroups.length) {
+          groupFilter.replaceChildren(new Option('Todos os grupos', ''));
+          availableGroups.forEach((group) => groupFilter.appendChild(new Option(group, group)));
+          groupFilter.value = availableGroups.includes(selectedGroup) ? selectedGroup : '';
+        }
+      }
+      const activeGroup = groupFilter?.value || '';
+      const filteredRequests = activeGroup
+        ? requests.filter((item) => (item.contexto?.perfil_nome || 'Perfil não informado') === activeGroup)
+        : requests;
+      const signature = JSON.stringify([activeGroup, requests.map((item) => [item.id, item.contexto?.situacao, item.contexto?.tentativas, item.contexto?.expira_em, item.contexto?.grupo_usuario, item.contexto?.codigo_exibicao])]);
+      if (signature === lastSignature) return;
+      lastSignature = signature;
+      itemsContainer.replaceChildren();
+      countNode.textContent = activeGroup ? `${filteredRequests.length} de ${requests.length}` : String(requests.length);
+      withdrawalCenter.hidden = requests.length === 0;
+      const minimized = minimizedIds();
+
+      if (filteredRequests.length === 0 && requests.length > 0) {
+        appendText(itemsContainer, 'p', 'withdrawal-alert-center__empty', 'Nenhuma solicitação pendente neste grupo.');
+      }
+
+      filteredRequests.forEach((request) => {
+        const context = request.contexto || {};
+        const card = document.createElement('article');
+        card.className = 'withdrawal-alert';
+        card.dataset.withdrawalAlertId = String(request.id);
+        if (minimized.has(String(request.id))) card.classList.add('is-minimized');
+
+        const header = document.createElement('header');
+        header.className = 'withdrawal-alert__header';
+        const identity = document.createElement('div');
+        appendText(identity, 'span', 'withdrawal-alert__eyebrow', 'Solicitação #' + request.id);
+        appendText(identity, 'strong', '', context.usuario_nome || 'Usuário não identificado');
+        appendText(identity, 'span', 'withdrawal-alert__profile', `${context.grupo_usuario || 'Outros'} · ${context.perfil_nome || 'Perfil não informado'}`);
+        header.appendChild(identity);
+        const minimize = appendText(header, 'button', 'withdrawal-alert__minimize', card.classList.contains('is-minimized') ? 'Expandir' : 'Minimizar');
+        minimize.type = 'button';
+        minimize.addEventListener('click', () => {
+          card.classList.toggle('is-minimized');
+          const ids = minimizedIds();
+          if (card.classList.contains('is-minimized')) ids.add(String(request.id)); else ids.delete(String(request.id));
+          saveMinimizedIds(ids);
+          minimize.textContent = card.classList.contains('is-minimized') ? 'Expandir' : 'Minimizar';
+        });
+        card.appendChild(header);
+
+        const body = document.createElement('div');
+        body.className = 'withdrawal-alert__body';
+        const details = document.createElement('dl');
+        [['Chave', context.sala_nome || 'Não informada'], ['Solicitado em', formatDateTime(request.criado_em)], ['Solicitação válida até', formatDateTime(context.expira_em)]].forEach(([term, value]) => {
+          appendText(details, 'dt', '', term); appendText(details, 'dd', '', value);
+        });
+        body.appendChild(details);
+        if (context.exige_codigo_temporario && context.codigo_exibicao) {
+          const codeBox = document.createElement('div');
+          codeBox.className = 'withdrawal-alert__code';
+          appendText(codeBox, 'span', '', 'Compare com a senha exibida na tela do usuário');
+          appendText(codeBox, 'strong', '', context.codigo_exibicao);
+          body.appendChild(codeBox);
+        }
+        if (context.observacao) appendText(body, 'p', 'withdrawal-alert__note', 'Observação: ' + context.observacao);
+        if (context.situacao === 'codigo_expirado') appendText(body, 'p', 'withdrawal-alert__warning', 'Solicitação expirada. Peça ao usuário para gerar outra; este alerta continuará aberto.');
+        if ((context.tentativas || 0) > 0) appendText(body, 'p', 'withdrawal-alert__warning', `Tentativas incorretas: ${context.tentativas}.`);
+
+        const actions = document.createElement('div');
+        actions.className = 'withdrawal-alert__actions';
+        const confirmForm = document.createElement('form');
+        confirmForm.method = 'post'; confirmForm.action = payload.confirmar_url; confirmForm.className = 'withdrawal-alert__confirm';
+        confirmForm.append(hiddenInput('_csrf', payload.csrf), hiddenInput('notificacao_id', request.id));
+        if (context.codigo_legado) {
+          const codeInput = document.createElement('input');
+          codeInput.type = 'text'; codeInput.name = 'codigo_temporario'; codeInput.placeholder = 'Código antigo de 6 dígitos';
+          codeInput.inputMode = 'numeric'; codeInput.pattern = '[0-9]{6}'; codeInput.maxLength = 6; codeInput.autocomplete = 'one-time-code'; codeInput.required = true;
+          confirmForm.appendChild(codeInput);
+        }
+        const confirmButton = appendText(confirmForm, 'button', 'button', 'Aceitar e entregar'); confirmButton.type = 'submit';
+        actions.appendChild(confirmForm);
+
+        const closeForm = document.createElement('form');
+        closeForm.method = 'post'; closeForm.action = payload.fechar_url; closeForm.className = 'withdrawal-alert__close-form';
+        closeForm.append(hiddenInput('_csrf', payload.csrf), hiddenInput('notificacao_id', request.id));
+        const closeButton = appendText(closeForm, 'button', 'button button--danger', 'Recusar'); closeButton.type = 'submit';
+        closeForm.addEventListener('submit', (event) => {
+          if (!window.confirm('Recusar esta solicitação sem entregar a chave?')) event.preventDefault();
+        });
+        actions.appendChild(closeForm);
+        body.appendChild(actions);
+        card.appendChild(body);
+        itemsContainer.appendChild(card);
+      });
+    };
+
+    const refreshWithdrawalAlerts = async () => {
+      try {
+        const response = await window.fetch(listUrl, { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+        if (!response.ok) return;
+        renderWithdrawalAlerts(await response.json());
+      } catch (_) { /* mantém os alertas já carregados */ }
+    };
+
+    const centerCollapsed = storageGet('sgrp-retiradas-painel-minimizado') === '1';
+    withdrawalCenter.classList.toggle('is-collapsed', centerCollapsed);
+    centerToggle.textContent = centerCollapsed ? 'Expandir painel' : 'Minimizar painel';
+    centerToggle.setAttribute('aria-expanded', String(!centerCollapsed));
+    centerToggle.addEventListener('click', () => {
+      withdrawalCenter.classList.toggle('is-collapsed');
+      const collapsed = withdrawalCenter.classList.contains('is-collapsed');
+      storageSet('sgrp-retiradas-painel-minimizado', collapsed ? '1' : '0');
+      centerToggle.textContent = collapsed ? 'Expandir painel' : 'Minimizar painel';
+      centerToggle.setAttribute('aria-expanded', String(!collapsed));
+    });
+    groupFilter?.addEventListener('change', () => {
+      lastSignature = '';
+      if (latestPayload) renderWithdrawalAlerts(latestPayload);
+    });
+
+    refreshWithdrawalAlerts();
+    window.setInterval(refreshWithdrawalAlerts, 8000);
+  }
+
   document.querySelectorAll('[data-print-page]').forEach((button) => {
     button.addEventListener('click', () => window.print());
   });
@@ -529,6 +700,46 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  document.querySelectorAll('[data-reservation-bulk-form]').forEach((form) => {
+    const selectAll = document.querySelector('[data-reservation-select-all]');
+    const checkboxes = Array.from(document.querySelectorAll('[data-reservation-select]'))
+      .filter((checkbox) => checkbox.getAttribute('form') === form.id);
+    const countLabel = form.querySelector('[data-reservation-selected-count]');
+    const deleteButton = form.querySelector('[data-reservation-delete-selected]');
+
+    const updateSelection = () => {
+      const selected = checkboxes.filter((checkbox) => checkbox.checked);
+      checkboxes.forEach((checkbox) => {
+        checkbox.closest('tr')?.classList.toggle('is-selected', checkbox.checked);
+      });
+      if (countLabel) {
+        countLabel.textContent = selected.length === 1 ? '1 selecionada' : `${selected.length} selecionadas`;
+      }
+      if (deleteButton) {
+        deleteButton.disabled = selected.length === 0;
+      }
+      if (selectAll) {
+        selectAll.checked = checkboxes.length > 0 && selected.length === checkboxes.length;
+        selectAll.indeterminate = selected.length > 0 && selected.length < checkboxes.length;
+      }
+    };
+
+    checkboxes.forEach((checkbox) => checkbox.addEventListener('change', updateSelection));
+    selectAll?.addEventListener('change', () => {
+      checkboxes.forEach((checkbox) => {
+        checkbox.checked = selectAll.checked;
+      });
+      updateSelection();
+    });
+    form.addEventListener('submit', (event) => {
+      const total = checkboxes.filter((checkbox) => checkbox.checked).length;
+      if (total === 0 || !window.confirm(`Apagar permanentemente ${total} reserva(s) selecionada(s)?`)) {
+        event.preventDefault();
+      }
+    });
+    updateSelection();
+  });
+
   document.querySelectorAll('input[type="file"][data-preview]').forEach((input) => {
     input.addEventListener('change', () => {
       const target = document.querySelector(input.dataset.preview);
@@ -617,6 +828,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
     inputs.forEach((input) => input.addEventListener('change', updateSummary));
     updateSummary();
+  });
+
+  document.querySelectorAll('[data-manual-withdrawal-form]').forEach((form) => {
+    const select = form.querySelector('[data-manual-withdrawal-select]');
+    const wrapper = form.querySelector('[data-manual-withdrawal-name]');
+    const input = wrapper?.querySelector('input');
+
+    const updateManualWithdrawal = () => {
+      const manual = select?.value === 'nao_cadastrada';
+      if (wrapper) {
+        wrapper.hidden = !manual;
+      }
+      if (input) {
+        input.disabled = !manual;
+        input.required = manual;
+        if (!manual) {
+          input.value = '';
+        }
+      }
+    };
+
+    select?.addEventListener('change', updateManualWithdrawal);
+    updateManualWithdrawal();
   });
 
   document.querySelectorAll('[data-room-calendar]').forEach((calendar) => {

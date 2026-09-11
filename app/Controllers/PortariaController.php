@@ -15,6 +15,8 @@ use App\Models\PermissaoSala;
 use App\Models\Reserva;
 use App\Models\Sala;
 use App\Models\User;
+use App\Models\NotificacaoPortaria;
+use App\Services\RetiradaChaveService;
 
 // Operações da portaria: fila de devolução, visitantes, permissões e histórico.
 class PortariaController extends Controller
@@ -120,8 +122,7 @@ class PortariaController extends Controller
         $this->view('portaria/retiradas', [
             'title' => 'Retiradas',
             'movimentacoes' => (new Movimentacao())->abertas(),
-            'usuarios' => (new User())->all('nome'),
-            'salas' => (new Sala())->chavesDisponiveisParaRetirada(currentUser()),
+            'usuarios' => (new User())->allWithProfile(),
         ]);
     }
 
@@ -129,42 +130,48 @@ class PortariaController extends Controller
     {
         requireProfile('Agente de Portaria');
         verifyCsrf();
-
-        $usuarioId = (int) ($_POST['usuario_id'] ?? 0);
-        $salaId = (int) ($_POST['sala_id'] ?? 0);
-        $usuario = (new User())->find($usuarioId);
-
-        if (!$usuario || ($usuario['situacao'] ?? '') !== 'ativo') {
-            flash('error', 'Selecione um usuario ativo para registrar a retirada.');
-            redirect('/portaria/retiradas');
-        }
-        $bloqueio = (new BloqueioChave())->ativoParaUsuario($usuarioId);
-        if ($bloqueio) {
-            flash('error', 'Este usuario esta temporariamente bloqueado para retirar chaves ate ' . date('d/m/Y H:i', strtotime($bloqueio['fim_em'])) . '.');
-            redirect('/portaria/retiradas');
-        }
-        if ($salaId <= 0 || !(new Sala())->chavePodeSerRetirada($salaId, currentUser())) {
-            flash('error', 'Esta chave nao esta disponivel para retirada.');
-            redirect('/portaria/retiradas');
-        }
-
-        (new Movimentacao())->create([
-            'usuario_id' => $usuarioId,
-            'sala_id' => $salaId,
-            'tipo_movimentacao' => 'retirada_chave',
-            'situacao' => 'aberta',
-            'retirada_em' => date('Y-m-d H:i:s'),
-            'devolucao_prevista_em' => null,
-            'registrado_por_usuario_id' => currentUser()['id'],
-            'observacao' => $_POST['observacao'] ?? null,
-        ]);
-
-        audit('Portaria', 'retirada_chave_terceiro', 'Retirada de chave registrada pela portaria.', [
-            'usuario_id' => $usuarioId,
-            'sala_id' => $salaId,
-        ]);
-        flash('success', 'Retirada de chave registrada.');
+        flash('error', 'A retirada direta foi desativada. Confirme uma solicitação usando o código temporário apresentado pelo usuário.');
         redirect('/portaria/retiradas');
+    }
+
+    public function confirmarRetiradaChave(): void
+    {
+        requireProfile('Agente de Portaria');
+        verifyCsrf();
+
+        try {
+            $resultado = (new RetiradaChaveService())->confirmar(
+                (int) ($_POST['notificacao_id'] ?? 0),
+                (string) ($_POST['codigo_temporario'] ?? ''),
+                currentUser()
+            );
+            flash($resultado['ok'] ? 'success' : 'error', (string) $resultado['mensagem']);
+        } catch (\RuntimeException $error) {
+            flash('error', $error->getMessage());
+        }
+        redirect('/portaria/retiradas');
+    }
+
+    public function fecharSolicitacaoRetirada(): void
+    {
+        requireProfile('Agente de Portaria');
+        verifyCsrf();
+        $fechada = (new RetiradaChaveService())->fechar((int) ($_POST['notificacao_id'] ?? 0), currentUser());
+        flash($fechada ? 'success' : 'error', $fechada
+            ? 'Solicitação recusada sem registrar a entrega da chave.'
+            : 'A solicitação não está mais pendente.');
+        redirect('/portaria/retiradas');
+    }
+
+    public function solicitacoesRetiradaPendentes(): void
+    {
+        requireProfile('Agente de Portaria');
+        $this->json([
+            'solicitacoes' => (new NotificacaoPortaria())->retiradasPendentes(),
+            'csrf' => csrfToken(),
+            'confirmar_url' => baseUrl('/portaria/retiradas/confirmar-chave'),
+            'fechar_url' => baseUrl('/portaria/retiradas/fechar-solicitacao'),
+        ]);
     }
 
     public function devolverChave(): void
@@ -590,6 +597,41 @@ class PortariaController extends Controller
         redirect('/portaria/reservas');
     }
 
+    public function excluirReservasEmLote(): void
+    {
+        requireProfile(['Agente de Portaria', 'Desenvolvedor']);
+        verifyCsrf();
+
+        $reservaIds = array_values(array_unique(array_filter(
+            array_map('intval', (array) ($_POST['reserva_ids'] ?? [])),
+            static fn (int $id): bool => $id > 0
+        )));
+
+        if (!$reservaIds) {
+            flash('error', 'Selecione ao menos uma reserva para apagar.');
+            redirect('/portaria/reservas');
+        }
+        if (count($reservaIds) > 300) {
+            flash('error', 'Selecione no máximo 300 reservas por operação.');
+            redirect('/portaria/reservas');
+        }
+
+        $quantidade = (new Reserva())->deleteMany($reservaIds);
+        audit('Reservas', 'exclusao_historico_em_lote', 'Reservas selecionadas foram removidas pela Portaria ou pelo acesso tecnico.', [
+            'reserva_ids' => $reservaIds,
+            'quantidade_solicitada' => count($reservaIds),
+            'quantidade_excluida' => $quantidade,
+        ]);
+
+        flash(
+            'success',
+            $quantidade === 1
+                ? '1 reserva selecionada foi apagada.'
+                : $quantidade . ' reservas selecionadas foram apagadas.'
+        );
+        redirect('/portaria/reservas');
+    }
+
     private function validarReservaPortaria(): array
     {
         $inicio = $this->criarDataHora((string) ($_POST['inicio_em'] ?? ''));
@@ -659,21 +701,7 @@ class PortariaController extends Controller
 
     private function salaDisponivelParaReserva(int $salaId, \DateTimeImmutable $inicio, \DateTimeImmutable $fim): bool
     {
-        $pdo = Database::pdo();
-        $stmt = $pdo->prepare('SELECT situacao FROM salas WHERE id = ? LIMIT 1');
-        $stmt->execute([$salaId]);
-        $situacao = $stmt->fetchColumn();
-        if (!in_array($situacao, ['disponivel', 'fechada'], true)) {
-            return false;
-        }
-
-        $stmt = $pdo->prepare('SELECT COUNT(*) FROM movimentacoes WHERE sala_id = ? AND situacao = "aberta"');
-        $stmt->execute([$salaId]);
-        if ((int) $stmt->fetchColumn() > 0) {
-            return false;
-        }
-
-        return !(new Reserva())->hasConflict(
+        return (new Reserva())->salaDisponivelParaReserva(
             $salaId,
             $inicio->format('Y-m-d H:i:s'),
             $fim->format('Y-m-d H:i:s')
@@ -904,7 +932,11 @@ class PortariaController extends Controller
             $movimentacao['acoes_periodo'] = $acoes ? implode(' e ', $acoes) : 'Movimentação registrada';
             $quantidadeAcoes += max(1, count($acoes));
             $salasUnicas[(int) $movimentacao['sala_id']] = true;
-            $usuariosUnicos[(int) $movimentacao['usuario_id']] = true;
+            $nomeManual = trim((string) ($movimentacao['usuario_nome_manual'] ?? ''));
+            $chaveUsuario = $nomeManual !== ''
+                ? 'manual:' . comparableProfile($nomeManual)
+                : 'usuario:' . (int) $movimentacao['usuario_id'];
+            $usuariosUnicos[$chaveUsuario] = true;
         }
         unset($movimentacao);
 
@@ -949,7 +981,7 @@ class PortariaController extends Controller
             'observacao' => $_POST['observacao'] ?? $mov['observacao'],
         ]);
 
-        if ($pessoaDiferente && !empty($mov['sala_id'])) {
+        if ($pessoaDiferente && !empty($mov['sala_id']) && empty($mov['usuario_nome_manual'])) {
             $motivo = $devolvidoPor === 'nao_cadastrada' ? 'Devolução realizada por pessoa não cadastrada.' : 'Devolução realizada por pessoa diferente.';
             $adv = new AdvertenciaChave();
             $adv->create([
