@@ -11,6 +11,10 @@ ou Estagiario. Esses perfis nao aparecem nos seletores do agente e seguem o flux
 proprio de solicitacao/autorizacao; permissoes antigas ficam disponiveis apenas
 para consulta ou revogacao.
 
+O campo manual "Quem retirou" tambem exclui esses tres perfis e organiza os
+demais usuarios ativos em grupos de perfil. Independentemente da interface, a
+rota de retirada direta da Portaria permanece bloqueada para impedir atalhos.
+
 ```mermaid
 sequenceDiagram
     actor Usuario

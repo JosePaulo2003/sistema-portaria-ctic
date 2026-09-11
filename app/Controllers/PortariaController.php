@@ -119,10 +119,15 @@ class PortariaController extends Controller
     public function retiradas(): void
     {
         requireProfile('Agente de Portaria');
+        $userModel = new User();
+        $usuarios = $userModel->allWithProfile();
         $this->view('portaria/retiradas', [
             'title' => 'Retiradas',
             'movimentacoes' => (new Movimentacao())->abertas(),
-            'usuarios' => (new User())->allWithProfile(),
+            'usuarios' => $usuarios,
+            'usuariosRetiradaPorPerfil' => $this->agruparUsuariosPorPerfil(
+                $userModel->ativosParaPermissaoManualPortaria()
+            ),
         ]);
     }
 

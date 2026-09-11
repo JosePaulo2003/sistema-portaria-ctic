@@ -3,6 +3,7 @@
 ## 2026-09-11 — correção da Portaria
 
 - Remoção de alunos, bolsistas e estagiários dos seletores de permissão manual da Portaria.
+- Remoção desses três perfis do campo “Quem retirou” no registro manual, com os demais usuários agrupados por perfil.
 - Bloqueio equivalente no servidor para impedir cadastro ou alteração por requisição direta.
 - Organização dos usuários e das permissões por perfil.
 - Permissões antigas desses perfis permanecem disponíveis somente para consulta e revogação.

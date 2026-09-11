@@ -45,13 +45,15 @@ uksort($movimentacoesPorPerfil, 'strnatcasecmp');
             <select name="usuario_id" required data-manual-withdrawal-select>
                 <option value="">Selecione uma pessoa</option>
                 <option value="nao_cadastrada">Pessoa sem cadastro</option>
-                <?php foreach ($usuarios as $u): ?>
-                    <?php if (($u['situacao'] ?? '') === 'ativo'): ?>
-                        <option value="<?= e($u['id']) ?>"><?= e($u['nome']) ?></option>
-                    <?php endif; ?>
+                <?php foreach ($usuariosRetiradaPorPerfil as $perfil => $usuariosDoPerfil): ?>
+                    <optgroup label="<?= e($perfil) ?>">
+                        <?php foreach ($usuariosDoPerfil as $u): ?>
+                            <option value="<?= e($u['id']) ?>"><?= e($u['nome']) ?></option>
+                        <?php endforeach; ?>
+                    </optgroup>
                 <?php endforeach; ?>
             </select>
-            <small>Use “Pessoa sem cadastro” quando o nome não estiver na lista.</small>
+            <small>Aluno, Aluno Bolsista e Estagiário solicitam pela própria conta e não aparecem nesta lista.</small>
         </label>
 
         <label class="withdrawal-register-field">
