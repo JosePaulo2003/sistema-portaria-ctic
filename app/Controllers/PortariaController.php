@@ -198,14 +198,24 @@ class PortariaController extends Controller
         $permissaoModel = new PermissaoSala();
         $userModel = new User();
         $userModel->purgeExpiredVisitors();
+        $usuarios = $userModel->ativosParaPermissaoManualPortaria();
+        $usuariosIds = array_map(static fn (array $usuario): int => (int) $usuario['id'], $usuarios);
+        if ($usuarioId > 0 && !in_array($usuarioId, $usuariosIds, true)) {
+            $usuarioId = 0;
+        }
+        $permissaoEdicao = $editarId > 0 ? $permissaoModel->findWithDetails($editarId) : null;
+        if ($permissaoEdicao && User::perfilUsaFluxoProprioChave((string) ($permissaoEdicao['usuario_perfil_nome'] ?? ''))) {
+            $permissaoEdicao = null;
+            flash('warning', 'Aluno, bolsista e estagiario possuem fluxo proprio. A Portaria pode consultar ou revogar a permissao, mas nao edita-la.');
+        }
         $this->view('portaria/permissoes', [
             'title' => 'Permissões',
             'permissoesSalas' => $permissaoModel->withDetails($usuarioId ?: null),
             'permissoesItens' => (new PermissaoItem())->withDetails($usuarioId ?: null),
-            'usuarios' => $userModel->allWithProfile(),
+            'usuariosPorPerfil' => $this->agruparUsuariosPorPerfil($usuarios),
             'salas' => (new Sala())->all('nome'),
             'usuarioFiltro' => $usuarioId,
-            'permissaoEdicao' => $editarId > 0 ? $permissaoModel->findWithDetails($editarId) : null,
+            'permissaoEdicao' => $permissaoEdicao,
         ]);
     }
 
@@ -221,10 +231,11 @@ class PortariaController extends Controller
         )));
         $acessoTotal = !empty($_POST['acesso_total']);
         $nuncaExpirar = !empty($_POST['nunca_expirar']);
-        $usuario = (new User())->find($usuarioId);
+        $userModel = new User();
+        $usuario = $userModel->findWithProfile($usuarioId);
 
-        if (!$usuario || ($usuario['situacao'] ?? '') !== 'ativo') {
-            flash('error', 'Selecione um usuario ativo.');
+        if (!$usuario || !$userModel->podeReceberPermissaoManualPortaria($usuarioId)) {
+            flash('error', 'Aluno, bolsista e estagiario devem usar o fluxo proprio de solicitacao. A Portaria nao pode cadastrar essa permissao manualmente.');
             redirect('/portaria/permissoes');
         }
         if (!$acessoTotal && !$salaIds) {
@@ -326,9 +337,10 @@ class PortariaController extends Controller
         $salaId = (int) ($_POST['sala_id'] ?? 0);
         $acessoTotal = !empty($_POST['acesso_total']);
         $nuncaExpirar = !empty($_POST['nunca_expirar']);
-        $usuario = (new User())->find($usuarioId);
-        if (!$usuario || ($usuario['situacao'] ?? '') !== 'ativo') {
-            flash('error', 'Selecione um usuario ativo.');
+        $userModel = new User();
+        $usuario = $userModel->findWithProfile($usuarioId);
+        if (!$usuario || !$userModel->podeReceberPermissaoManualPortaria($usuarioId)) {
+            flash('error', 'Esta permissao pertence a um perfil com fluxo proprio. A Portaria pode revoga-la, mas nao altera-la manualmente.');
             redirect('/portaria/permissoes?editar_id=' . $permissaoId);
         }
         if (!$acessoTotal && ($salaId <= 0 || !(new Sala())->find($salaId))) {
@@ -1000,6 +1012,16 @@ class PortariaController extends Controller
     private function exigirGestaoSalasItens(): void
     {
         requireProfile(['Agente de Portaria', 'Tecnico']);
+    }
+
+    private function agruparUsuariosPorPerfil(array $usuarios): array
+    {
+        $grupos = [];
+        foreach ($usuarios as $usuario) {
+            $perfil = fixMojibakeText(trim((string) ($usuario['perfil_nome'] ?? 'Sem perfil')));
+            $grupos[$perfil !== '' ? $perfil : 'Sem perfil'][] = $usuario;
+        }
+        return $grupos;
     }
 
     private function salaData(): array

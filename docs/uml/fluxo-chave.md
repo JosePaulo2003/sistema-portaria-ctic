@@ -6,6 +6,11 @@ Para esses perfis, o codigo simples de quatro digitos fica visivel tanto para o
 solicitante quanto para o agente. Os demais perfis autorizados usam retirada
 automatica. Servicos Gerais mantem o fluxo proprio de trabalho.
 
+A Portaria nao cadastra nem edita manualmente permissoes de Aluno, Aluno Bolsista
+ou Estagiario. Esses perfis nao aparecem nos seletores do agente e seguem o fluxo
+proprio de solicitacao/autorizacao; permissoes antigas ficam disponiveis apenas
+para consulta ou revogacao.
+
 ```mermaid
 sequenceDiagram
     actor Usuario

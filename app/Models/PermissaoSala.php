@@ -13,9 +13,11 @@ class PermissaoSala extends Model
     public function withDetails(?int $usuarioId = null): array
     {
         $sql = 'SELECT p.*, u.nome AS usuario_nome, u.email AS usuario_email, u.situacao AS usuario_situacao,
+                    pf.nome AS usuario_perfil_nome, pf.nivel AS usuario_perfil_nivel,
                     s.nome AS sala_nome, a.nome AS autorizador_nome
              FROM permissoes_salas p
              JOIN usuarios u ON u.id = p.usuario_id
+             JOIN perfis pf ON pf.id = u.perfil_id
              LEFT JOIN salas s ON s.id = p.sala_id
              JOIN usuarios a ON a.id = p.autorizado_por';
         $conditions = ['p.situacao <> ?'];
@@ -28,6 +30,9 @@ class PermissaoSala extends Model
 
         $sql .= ' WHERE ' . implode(' AND ', $conditions);
         $sql .= ' ORDER BY
+                pf.nivel DESC,
+                pf.nome,
+                u.nome,
                 p.inicio_autorizacao IS NULL,
                 p.inicio_autorizacao DESC,
                 p.expira_em IS NULL,
@@ -43,9 +48,12 @@ class PermissaoSala extends Model
     public function findWithDetails(int $id): ?array
     {
         $stmt = $this->db()->prepare(
-            'SELECT p.*, u.nome AS usuario_nome, u.email AS usuario_email, s.nome AS sala_nome, a.nome AS autorizador_nome
+            'SELECT p.*, u.nome AS usuario_nome, u.email AS usuario_email,
+                    pf.nome AS usuario_perfil_nome, pf.nivel AS usuario_perfil_nivel,
+                    s.nome AS sala_nome, a.nome AS autorizador_nome
              FROM permissoes_salas p
              JOIN usuarios u ON u.id = p.usuario_id
+             JOIN perfis pf ON pf.id = u.perfil_id
              LEFT JOIN salas s ON s.id = p.sala_id
              JOIN usuarios a ON a.id = p.autorizado_por
              WHERE p.id = ? LIMIT 1'

@@ -1,6 +1,6 @@
 <section class="section-header">
     <h1>Permissoes</h1>
-    <p>A Portaria pode liberar retirada de chaves para qualquer usuario ativo do sistema.</p>
+    <p>A Portaria pode liberar chaves para os perfis autorizados abaixo. Alunos, bolsistas e estagiários usam o fluxo próprio de solicitação.</p>
 </section>
 
 <?php
@@ -13,10 +13,14 @@ $expiracaoAutorizacaoPadrao = $inicioAutorizacaoPadrao->modify('+1 hour');
     <label>Filtrar permissões por usuário
         <select name="usuario_id">
             <option value="">Todos os usuários</option>
-            <?php foreach ($usuarios as $usuario): ?>
-                <option value="<?= e($usuario['id']) ?>" <?= (int) ($usuarioFiltro ?? 0) === (int) $usuario['id'] ? 'selected' : '' ?>>
-                    <?= e($usuario['nome']) ?> - <?= e($usuario['perfil_nome'] ?? '') ?>
-                </option>
+            <?php foreach ($usuariosPorPerfil as $perfil => $usuariosDoPerfil): ?>
+                <optgroup label="<?= e($perfil) ?>">
+                    <?php foreach ($usuariosDoPerfil as $usuario): ?>
+                        <option value="<?= e($usuario['id']) ?>" <?= (int) ($usuarioFiltro ?? 0) === (int) $usuario['id'] ? 'selected' : '' ?>>
+                            <?= e($usuario['nome']) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </optgroup>
             <?php endforeach; ?>
         </select>
     </label>
@@ -34,11 +38,14 @@ $expiracaoAutorizacaoPadrao = $inicioAutorizacaoPadrao->modify('+1 hour');
             Usuario
             <select name="usuario_id" required>
                 <option value="">Selecione</option>
-                <?php foreach ($usuarios as $usuario): ?>
-                    <?php if (($usuario['situacao'] ?? '') !== 'ativo') continue; ?>
-                    <option value="<?= e($usuario['id']) ?>">
-                        <?= e($usuario['nome']) ?> - <?= e($usuario['perfil_nome'] ?? '') ?> (<?= e($usuario['email']) ?>)
-                    </option>
+                <?php foreach ($usuariosPorPerfil as $perfil => $usuariosDoPerfil): ?>
+                    <optgroup label="<?= e($perfil) ?>">
+                        <?php foreach ($usuariosDoPerfil as $usuario): ?>
+                            <option value="<?= e($usuario['id']) ?>">
+                                <?= e($usuario['nome']) ?> (<?= e($usuario['email']) ?>)
+                            </option>
+                        <?php endforeach; ?>
+                    </optgroup>
                 <?php endforeach; ?>
             </select>
         </label>
@@ -251,7 +258,14 @@ $expiracaoAutorizacaoPadrao = $inicioAutorizacaoPadrao->modify('+1 hour');
                 </tr>
             </thead>
             <tbody>
+                <?php $perfilTabelaAtual = null; ?>
                 <?php foreach ($permissoesSalas as $p): ?>
+                    <?php $perfilTabela = fixMojibakeText((string) ($p['usuario_perfil_nome'] ?? 'Sem perfil')); ?>
+                    <?php if ($perfilTabela !== $perfilTabelaAtual): $perfilTabelaAtual = $perfilTabela; ?>
+                        <tr class="table-profile-group">
+                            <th colspan="7" scope="rowgroup"><?= e($perfilTabela) ?></th>
+                        </tr>
+                    <?php endif; ?>
                     <tr>
                         <td><?= e($p['usuario_nome']) ?></td>
                         <td><?= !empty($p['acesso_total']) ? 'Todas as chaves' : e($p['sala_nome'] ?? '-') ?></td>
@@ -266,7 +280,10 @@ $expiracaoAutorizacaoPadrao = $inicioAutorizacaoPadrao->modify('+1 hour');
                         <td><?= e(formatDateTimeBr($p['criado_em'] ?? null)) ?></td>
                         <td><span class="status-badge status-<?= e($p['situacao']) ?>"><?= e($p['situacao']) ?></span></td>
                         <td>
-                            <a class="button button--secondary" href="<?= e(baseUrl('/portaria/permissoes?usuario_id=' . (int) $p['usuario_id'] . '&editar_id=' . (int) $p['id'] . '#editar-permissao')) ?>">Editar</a>
+                            <?php $perfilFluxoProprio = \App\Models\User::perfilUsaFluxoProprioChave($perfilTabela); ?>
+                            <?php if (!$perfilFluxoProprio): ?>
+                                <a class="button button--secondary" href="<?= e(baseUrl('/portaria/permissoes?usuario_id=' . (int) $p['usuario_id'] . '&editar_id=' . (int) $p['id'] . '#editar-permissao')) ?>">Editar</a>
+                            <?php endif; ?>
                             <?php if (($p['situacao'] ?? '') === 'ativa'): ?>
                                 <form method="post" action="<?= e(baseUrl('/portaria/permissoes/chaves/revogar')) ?>" class="inline-form">
                                     <?= csrfField() ?>

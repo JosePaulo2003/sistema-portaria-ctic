@@ -486,3 +486,12 @@ label > small,
     min-height: 48px;
   }
 }
+.table-profile-group th {
+    background: #e7f3ee;
+    color: #174f3e;
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-align: left;
+    text-transform: uppercase;
+}

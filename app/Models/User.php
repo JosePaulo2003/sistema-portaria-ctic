@@ -21,6 +21,16 @@ class User extends Model
         'Professor',
     ];
 
+    // Estes perfis possuem fluxo proprio de solicitacao/autorizacao de chave e
+    // nao podem receber uma liberacao manual feita pelo agente de Portaria.
+    private const PERFIS_SEM_PERMISSAO_MANUAL_PORTARIA = [
+        'Aluno',
+        'Aluno Bolsista',
+        'Bolsista',
+        'Estagiario',
+        'Estagiário',
+    ];
+
     public function allWithProfile(): array
     {
         return $this->db()->query(
@@ -30,6 +40,44 @@ class User extends Model
              LEFT JOIN cursos c ON c.id = u.curso_id
              ORDER BY u.nome'
         )->fetchAll();
+    }
+
+    public function ativosParaPermissaoManualPortaria(): array
+    {
+        $stmt = $this->db()->prepare(
+            'SELECT u.id, u.nome, u.email, u.situacao, p.nome AS perfil_nome, p.nivel AS perfil_nivel
+             FROM usuarios u
+             JOIN perfis p ON p.id = u.perfil_id
+             WHERE u.situacao = ?
+             ORDER BY p.nivel DESC, p.nome, u.nome, u.id'
+        );
+        $stmt->execute(['ativo']);
+        return array_values(array_filter(
+            $stmt->fetchAll(),
+            static fn (array $usuario): bool => !self::perfilUsaFluxoProprioChave((string) ($usuario['perfil_nome'] ?? ''))
+        ));
+    }
+
+    public function podeReceberPermissaoManualPortaria(int $usuarioId): bool
+    {
+        if ($usuarioId <= 0) {
+            return false;
+        }
+
+        $usuario = $this->findWithProfile($usuarioId);
+        return $usuario !== null
+            && ($usuario['situacao'] ?? '') === 'ativo'
+            && !self::perfilUsaFluxoProprioChave((string) ($usuario['perfil_nome'] ?? ''));
+    }
+
+    public static function perfilUsaFluxoProprioChave(string $perfil): bool
+    {
+        $perfilComparavel = comparableProfile($perfil);
+        return in_array(
+            $perfilComparavel,
+            array_map('comparableProfile', self::PERFIS_SEM_PERMISSAO_MANUAL_PORTARIA),
+            true
+        );
     }
 
     public function ativosComPermissaoSolicitarReserva(): array

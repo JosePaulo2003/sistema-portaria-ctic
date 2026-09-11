@@ -1,5 +1,12 @@
 # Histórico de alterações
 
+## 2026-09-11 — correção da Portaria
+
+- Remoção de alunos, bolsistas e estagiários dos seletores de permissão manual da Portaria.
+- Bloqueio equivalente no servidor para impedir cadastro ou alteração por requisição direta.
+- Organização dos usuários e das permissões por perfil.
+- Permissões antigas desses perfis permanecem disponíveis somente para consulta e revogação.
+
 ## 2026-09-11
 
 - Sincronização do código atual da VM com o repositório.
