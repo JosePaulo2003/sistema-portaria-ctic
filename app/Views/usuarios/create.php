@@ -1,3 +1,10 @@
+<?php
+/**
+ * GUIA DE MANUTENCAO: Este arquivo renderiza a tela create do módulo usuarios.
+ *
+ * Ponto de atencao: A view recebe dados prontos. Consultar banco aqui faria o HTML virar controller clandestino, e ninguém precisa desse segundo emprego.
+ */
+?>
 <section class="section-header"><h1>Cadastrar usuario</h1></section>
 <form method="post" class="card form-grid">
     <input type="hidden" name="_csrf" value="<?= e(csrfToken()) ?>" data-csrf-token>

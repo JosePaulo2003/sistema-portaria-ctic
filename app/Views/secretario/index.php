@@ -1,3 +1,10 @@
+<?php
+/**
+ * GUIA DE MANUTENCAO: Este arquivo renderiza a tela index do módulo secretario.
+ *
+ * Ponto de atencao: A view recebe dados prontos. Consultar banco aqui faria o HTML virar controller clandestino, e ninguém precisa desse segundo emprego.
+ */
+?>
 <section class="section-header">
     <h1>Secretario de Curso</h1>
     <p>Periodos academicos e rotinas de secretaria.</p>

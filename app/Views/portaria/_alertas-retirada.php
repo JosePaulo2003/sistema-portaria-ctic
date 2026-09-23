@@ -1,3 +1,10 @@
+<?php
+/**
+ * GUIA DE MANUTENCAO: Este arquivo renderiza a tela alertas retirada do módulo portaria.
+ *
+ * Ponto de atencao: A view recebe dados prontos. Consultar banco aqui faria o HTML virar controller clandestino, e ninguém precisa desse segundo emprego.
+ */
+?>
 <aside
     class="withdrawal-alert-center"
     data-withdrawal-alert-center

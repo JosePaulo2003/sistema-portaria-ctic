@@ -1,3 +1,10 @@
+<?php
+/**
+ * GUIA DE MANUTENCAO: Este arquivo renderiza a tela reservas curso do módulo secretario.
+ *
+ * Ponto de atencao: A view recebe dados prontos. Consultar banco aqui faria o HTML virar controller clandestino, e ninguém precisa desse segundo emprego.
+ */
+?>
 <section class="section-header">
     <h1>Reservas do Curso</h1>
     <p>Solicite reservas de sala. A Portaria aprova quando não houver conflito.</p>

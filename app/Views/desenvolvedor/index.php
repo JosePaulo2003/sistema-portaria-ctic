@@ -1,3 +1,10 @@
+<?php
+/**
+ * GUIA DE MANUTENCAO: Este arquivo renderiza a tela index do módulo desenvolvedor.
+ *
+ * Ponto de atencao: A view recebe dados prontos. Consultar banco aqui faria o HTML virar controller clandestino, e ninguém precisa desse segundo emprego.
+ */
+?>
 <section class="section-header"><h1>Painel Técnico</h1><p>Acesso máximo: o Desenvolvedor pode acessar, criar, editar e operar todos os módulos.</p></section>
 <div class="dashboard-grid">
     <a class="card card-link" href="<?= e(baseUrl('/desenvolvedor/usuarios')) ?>"><h2>Usuários</h2><p>Gerenciar contas, perfis e situação.</p></a>

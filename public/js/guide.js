@@ -1,3 +1,7 @@
+/**
+ * GUIA DE MANUTENCAO: Este arquivo implementa comportamentos auxiliares do frontend.
+ * Ponto de atencao: preserve os seletores usados pelas views. Renomear um data-* sem procurar consumidores e como trocar a fechadura e culpar a chave.
+ */
 document.addEventListener('DOMContentLoaded', () => {
   const layer = document.querySelector('[data-guide-layer]');
   const configElement = document.querySelector('[data-guide-config]');

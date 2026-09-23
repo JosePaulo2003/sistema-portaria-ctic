@@ -1,6 +1,12 @@
 <?php
 declare(strict_types=1);
 
+/**
+ * GUIA DE MANUTENCAO: Este arquivo valida permissões de sala considerando validade, dia e horário.
+ *
+ * Ponto de atencao: Mantenha parâmetros preparados e regras de consulta explícitas. O banco executa SQL, não boas intenções.
+ */
+
 namespace App\Models;
 
 use App\Core\Model;
@@ -80,6 +86,9 @@ class PermissaoSala extends Model
 
     public function usuarioTemAcesso(int $usuarioId, int $salaId): bool
     {
+        // Horarios que atravessam meia-noite usam OR (>= inicio OU <= fim).
+        // Trocar por BETWEEN parece elegante e quebra exatamente o turno em que
+        // ha menos gente acordada para descobrir o motivo.
         $stmt = $this->db()->prepare(
             'SELECT COUNT(*)
              FROM permissoes_salas
@@ -128,6 +137,10 @@ class PermissaoSala extends Model
      */
     public function usuarioTemChaveAtribuida(int $usuarioId): bool
     {
+        // Deliberadamente nao valida data/hora: este metodo decide se a area
+        // aparece. A autorizacao efetiva e revalidada em usuarioTemAcesso().
+        // Misturar visibilidade com permissao produz botoes fantasmas ou, pior,
+        // autorizacoes otimistas.
         $stmt = $this->db()->prepare(
             'SELECT COUNT(*)
              FROM permissoes_salas

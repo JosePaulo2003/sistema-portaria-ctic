@@ -1,6 +1,12 @@
 <?php
 declare(strict_types=1);
 
+/**
+ * GUIA DE MANUTENCAO: Este arquivo centraliza usuários, perfis e filtros de elegibilidade.
+ *
+ * Ponto de atencao: Mantenha parâmetros preparados e regras de consulta explícitas. O banco executa SQL, não boas intenções.
+ */
+
 namespace App\Models;
 
 use App\Core\Model;
@@ -52,6 +58,9 @@ class User extends Model
              ORDER BY p.nivel DESC, p.nome, u.nome, u.id'
         );
         $stmt->execute(['ativo']);
+        // Esta filtragem e a fonte de verdade dos seletores manuais da Portaria.
+        // Esconder apenas no HTML seria seguranca por cortina: bonito ate alguem
+        // enviar o POST diretamente.
         return array_values(array_filter(
             $stmt->fetchAll(),
             static fn (array $usuario): bool => !self::perfilUsaFluxoProprioChave((string) ($usuario['perfil_nome'] ?? ''))
@@ -72,6 +81,9 @@ class User extends Model
 
     public static function perfilUsaFluxoProprioChave(string $perfil): bool
     {
+        // Centralize aqui qualquer novo perfil impedido de retirada/permissao
+        // manual. Copiar listas por controllers foi como surgiram divergencias
+        // anteriores; duplicacao e um bug esperando calendario livre.
         $perfilComparavel = comparableProfile($perfil);
         return in_array(
             $perfilComparavel,

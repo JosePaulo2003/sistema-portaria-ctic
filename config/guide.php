@@ -1,6 +1,12 @@
 <?php
 declare(strict_types=1);
 
+/**
+ * GUIA DE MANUTENCAO: Este arquivo define o conteúdo dos guias contextuais da interface.
+ *
+ * Ponto de atencao: Mudanças de configuração parecem pequenas até derrubarem todas as rotas ao mesmo tempo. Valide em ambiente seguro e sem credenciais no commit.
+ */
+
 return [
     'version' => '2026.08.24',
     'profiles' => [

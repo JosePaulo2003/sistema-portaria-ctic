@@ -1,6 +1,12 @@
 <?php
 declare(strict_types=1);
 
+/**
+ * GUIA DE MANUTENCAO: Este arquivo carrega o .env e oferece valores normalizados à aplicação.
+ *
+ * Ponto de atencao: Mudanças de configuração parecem pequenas até derrubarem todas as rotas ao mesmo tempo. Valide em ambiente seguro e sem credenciais no commit.
+ */
+
 // Leitor simples do .env usado pelas configuracoes da aplicacao.
 $envFile = dirname(__DIR__) . '/.env';
 if (is_file($envFile)) {

@@ -1,4 +1,9 @@
 <?php
+/**
+ * GUIA DE MANUTENCAO: Este arquivo renderiza a tela relatorios do módulo diretor.
+ *
+ * Ponto de atencao: A view recebe dados prontos. Consultar banco aqui faria o HTML virar controller clandestino, e ninguém precisa desse segundo emprego.
+ */
 $variacao = static function (int $atual, int $anterior): array {
     if ($anterior === 0) {
         return $atual === 0

@@ -1,3 +1,10 @@
+<?php
+/**
+ * GUIA DE MANUTENCAO: Este arquivo renderiza a tela sala pesquisa do módulo aluno bolsista.
+ *
+ * Ponto de atencao: A view recebe dados prontos. Consultar banco aqui faria o HTML virar controller clandestino, e ninguém precisa desse segundo emprego.
+ */
+?>
 <section class="section-header">
     <h1>Retiradas autorizadas</h1>
     <p>Use esta tela para retirar chaves autorizadas ao seu usuario.</p>

@@ -1,6 +1,12 @@
 <?php
 declare(strict_types=1);
 
+/**
+ * GUIA DE MANUTENCAO: Este arquivo declara o mapa HTTP da aplicação e liga cada URL ao controller correto.
+ *
+ * Ponto de atencao: Toda rota mutável deve continuar em POST com CSRF. GET destrutivo é o tipo de atalho que vira relatório de incidente.
+ */
+
 use App\Controllers\AdministrativoController;
 use App\Controllers\AlunoBolsistaController;
 use App\Controllers\AlunoController;

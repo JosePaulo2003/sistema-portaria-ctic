@@ -1,3 +1,10 @@
+<?php
+/**
+ * GUIA DE MANUTENCAO: Este arquivo renderiza a tela reservas do módulo portaria.
+ *
+ * Ponto de atencao: A view recebe dados prontos. Consultar banco aqui faria o HTML virar controller clandestino, e ninguém precisa desse segundo emprego.
+ */
+?>
 <section class="section-header">
     <h1>Reservas</h1>
     <p>Cadastre reservas confirmadas e acompanhe solicitacoes pendentes dos demais perfis.</p>

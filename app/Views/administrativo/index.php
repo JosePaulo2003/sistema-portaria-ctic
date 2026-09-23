@@ -1,3 +1,10 @@
+<?php
+/**
+ * GUIA DE MANUTENCAO: Este arquivo renderiza a tela index do módulo administrativo.
+ *
+ * Ponto de atencao: A view recebe dados prontos. Consultar banco aqui faria o HTML virar controller clandestino, e ninguém precisa desse segundo emprego.
+ */
+?>
 <section class="section-header"><h1>Administrativo</h1><p>Consulta e acompanhamento administrativo.</p></section>
 <div class="dashboard-grid">
 <a class="card card-link" href="<?= e(baseUrl('/administrativo/disponibilidade-salas')) ?>"><h2>Disponibilidade</h2><p>Consultar salas e ambientes.</p></a>

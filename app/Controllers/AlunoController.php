@@ -1,6 +1,12 @@
 <?php
 declare(strict_types=1);
 
+/**
+ * GUIA DE MANUTENCAO: Este arquivo entrega as consultas e solicitações permitidas ao aluno.
+ *
+ * Ponto de atencao: Controller não é depósito de regra de negócio. Se ele começar a prever o futuro, extraia um Service e devolva a bola de cristal.
+ */
+
 namespace App\Controllers;
 
 use App\Core\Controller;

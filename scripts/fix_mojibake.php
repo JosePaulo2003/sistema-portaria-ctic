@@ -1,6 +1,12 @@
 <?php
 declare(strict_types=1);
 
+/**
+ * GUIA DE MANUTENCAO: Este arquivo corrige textos corrompidos por conversões de charset.
+ *
+ * Ponto de atencao: Leia a saída antes de comemorar. Script que termina sem barulho pode ter funcionado ou apenas desistido com elegância.
+ */
+
 $apply = in_array('--apply', $argv, true);
 $cfg = require dirname(__DIR__) . '/config/database.php';
 $dsn = sprintf('mysql:host=%s;port=%s;dbname=%s;charset=%s', $cfg['host'], $cfg['port'], $cfg['database'], $cfg['charset']);

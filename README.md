@@ -94,6 +94,13 @@ O envio da senha inicial por e-mail faz parte do fluxo operacional atual. Recome
 - `routes/`: mapa de rotas HTTP.
 - `scripts/`: migrações, verificações e integrações.
 
+## Manutenção
+
+Leia `docs/GUIA_DESENVOLVEDOR.md` antes de alterar fluxos de autenticação,
+permissão, retirada, reserva ou e-mail. O guia reúne o mapa dos módulos,
+decisões difíceis e roteiros de diagnóstico; os arquivos de código também têm
+comentários de manutenção próximos aos pontos mais sensíveis.
+
 ## Publicação
 
 Antes de enviar alterações ao GitHub:

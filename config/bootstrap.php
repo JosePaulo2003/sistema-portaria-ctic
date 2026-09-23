@@ -1,6 +1,12 @@
 <?php
 declare(strict_types=1);
 
+/**
+ * GUIA DE MANUTENCAO: Este arquivo inicializa codificação, fuso, segurança, sessão, banco, helpers e autoload.
+ *
+ * Ponto de atencao: Mudanças de configuração parecem pequenas até derrubarem todas as rotas ao mesmo tempo. Valide em ambiente seguro e sem credenciais no commit.
+ */
+
 // Inicializacao comum do SGRP antes das rotas responderem.
 mb_internal_encoding('UTF-8');
 date_default_timezone_set('America/Manaus');

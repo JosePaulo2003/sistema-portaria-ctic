@@ -1,6 +1,12 @@
 <?php
 declare(strict_types=1);
 
+/**
+ * GUIA DE MANUTENCAO: Este arquivo participa da execução do SGRP.
+ *
+ * Ponto de atencao: Confirme quem chama este arquivo antes de alterar; código órfão às vezes está apenas muito bem escondido.
+ */
+
 use App\Core\Database;
 use App\Models\LogAuditoria;
 use App\Models\LogSistema;

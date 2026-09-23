@@ -1,6 +1,12 @@
 <?php
 declare(strict_types=1);
 
+/**
+ * GUIA DE MANUTENCAO: Este arquivo orquestra o balcão da Portaria: permissões, retiradas, devoluções, reservas e visitantes.
+ *
+ * Ponto de atencao: Controller não é depósito de regra de negócio. Se ele começar a prever o futuro, extraia um Service e devolva a bola de cristal.
+ */
+
 namespace App\Controllers;
 
 use App\Core\Controller;
@@ -135,6 +141,10 @@ class PortariaController extends Controller
     {
         requireProfile('Agente de Portaria');
         verifyCsrf();
+        // Bloqueio proposital: o formulario legado pode continuar no HTML para
+        // evolucao da interface, mas a Portaria nao inicia retirada em nome do
+        // usuario. Reativar este metodo ressuscita exatamente o atalho que a
+        // regra de negocio mandou enterrar.
         flash('error', 'A retirada direta foi desativada. Confirme uma solicitação usando o código temporário apresentado pelo usuário.');
         redirect('/portaria/retiradas');
     }

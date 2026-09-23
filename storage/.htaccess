@@ -1,1 +1,4 @@
+# GUIA DE MANUTENCAO: Protege este diretorio ou direciona requisicoes ao ponto de entrada.
+# Ponto de atencao: uma regra permissiva aqui ignora toda a elegancia do PHP e entrega o arquivo mesmo assim.
+
 Require all denied

@@ -1,3 +1,10 @@
+<?php
+/**
+ * GUIA DE MANUTENCAO: Este arquivo renderiza a tela permissoes do módulo portaria.
+ *
+ * Ponto de atencao: A view recebe dados prontos. Consultar banco aqui faria o HTML virar controller clandestino, e ninguém precisa desse segundo emprego.
+ */
+?>
 <section class="section-header">
     <h1>Permissoes</h1>
     <p>A Portaria pode liberar chaves para os perfis autorizados abaixo. Alunos, bolsistas e estagiários usam o fluxo próprio de solicitação.</p>

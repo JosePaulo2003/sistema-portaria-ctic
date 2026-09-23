@@ -1,3 +1,10 @@
+<?php
+/**
+ * GUIA DE MANUTENCAO: Este arquivo renderiza a tela login do módulo auth.
+ *
+ * Ponto de atencao: A view recebe dados prontos. Consultar banco aqui faria o HTML virar controller clandestino, e ninguém precisa desse segundo emprego.
+ */
+?>
 <section class="auth-card">
     <div class="auth-brand">
         <img class="auth-brand__logo" src="<?= e(assetUrl('assets/sgrp_logo.png')) ?>" alt="SGRP - Sistema de Gestão de Recursos Pedagógicos">

@@ -1,4 +1,9 @@
 <?php
+/**
+ * GUIA DE MANUTENCAO: Este arquivo renderiza a tela reservas aulas do módulo coordenador.
+ *
+ * Ponto de atencao: A view recebe dados prontos. Consultar banco aqui faria o HTML virar controller clandestino, e ninguém precisa desse segundo emprego.
+ */
 $diasSemana = ['Segunda-feira', 'Terca-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sabado'];
 ?>
 <section class="section-header">

@@ -1,3 +1,6 @@
+# GUIA DE MANUTENCAO: Impede que segredos e dados operacionais entrem no historico.
+# Ponto de atencao: ignorar depois do commit nao apaga o passado. Git tambem guarda rancor.
+
 # Configuracoes locais e credenciais
 .env
 .env.*

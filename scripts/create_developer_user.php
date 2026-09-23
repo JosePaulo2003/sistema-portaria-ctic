@@ -1,6 +1,12 @@
 <?php
 declare(strict_types=1);
 
+/**
+ * GUIA DE MANUTENCAO: Este arquivo cria o primeiro Desenvolvedor por linha de comando, sem senha padrão de museu.
+ *
+ * Ponto de atencao: Leia a saída antes de comemorar. Script que termina sem barulho pode ter funcionado ou apenas desistido com elegância.
+ */
+
 use App\Core\Database;
 
 if (PHP_SAPI !== 'cli') {

@@ -1,4 +1,9 @@
 <?php
+/**
+ * GUIA DE MANUTENCAO: Este arquivo renderiza a tela lista chaves retirada do módulo partials.
+ *
+ * Ponto de atencao: A view recebe dados prontos. Consultar banco aqui faria o HTML virar controller clandestino, e ninguém precisa desse segundo emprego.
+ */
 $perfilRetirada = comparableProfile((string) (currentUser()['perfil_nome'] ?? ''));
 $exigeCodigoTemporario = in_array($perfilRetirada, array_map('comparableProfile', ['Aluno', 'Aluno Bolsista', 'Estagiário']), true);
 $exigeConfirmacaoPortaria = $exigeCodigoTemporario;

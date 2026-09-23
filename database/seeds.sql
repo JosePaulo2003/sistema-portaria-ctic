@@ -1,3 +1,6 @@
+-- GUIA DE MANUTENCAO: Este arquivo define dados iniciais sem credenciais reais.
+-- Ponto de atencao: faca backup antes de executar. ROLLBACK escrito depois do desastre continua sendo ficcao cientifica.
+
 USE sgrp;
 
 INSERT INTO perfis (nome, nivel) VALUES

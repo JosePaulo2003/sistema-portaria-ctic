@@ -1,3 +1,10 @@
+<?php
+/**
+ * GUIA DE MANUTENCAO: Este arquivo renderiza a tela retiradas do módulo servicos gerais.
+ *
+ * Ponto de atencao: A view recebe dados prontos. Consultar banco aqui faria o HTML virar controller clandestino, e ninguém precisa desse segundo emprego.
+ */
+?>
 <section class="section-header">
     <h1>Retirada de Chaves e Itens</h1>
     <p>Servicos Gerais tem acesso aos recursos para apoio operacional e acompanha a situacao atual.</p>

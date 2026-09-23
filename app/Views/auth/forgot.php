@@ -1,3 +1,10 @@
+<?php
+/**
+ * GUIA DE MANUTENCAO: Este arquivo renderiza a tela forgot do módulo auth.
+ *
+ * Ponto de atencao: A view recebe dados prontos. Consultar banco aqui faria o HTML virar controller clandestino, e ninguém precisa desse segundo emprego.
+ */
+?>
 <section class="auth-card">
     <h1>Recuperar senha</h1>
     <p>Informe o e-mail cadastrado. Você receberá um código de uso único, válido por 30 minutos.</p>

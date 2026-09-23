@@ -1,3 +1,7 @@
+/*
+ * GUIA DE MANUTENCAO: Esta folha estiliza os guias e elementos de ajuda contextual.
+ * Ponto de atencao: respeite a cascata e teste desktop e celular. Mais um !important raramente cura o problema; apenas o promove a problema do futuro.
+ */
 .guide-start-button {
   border-color: rgba(255, 255, 255, .52);
 }

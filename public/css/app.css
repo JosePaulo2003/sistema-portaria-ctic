@@ -1,3 +1,7 @@
+/*
+ * GUIA DE MANUTENCAO: Esta folha concentra o visual principal e os componentes históricos do sistema.
+ * Ponto de atencao: respeite a cascata e teste desktop e celular. Mais um !important raramente cura o problema; apenas o promove a problema do futuro.
+ */
 :root {
   --green: #2f7d5b;
   --green-dark: #245f49;

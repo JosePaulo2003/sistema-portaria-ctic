@@ -1,6 +1,12 @@
 <?php
 declare(strict_types=1);
 
+/**
+ * GUIA DE MANUTENCAO: Este arquivo mantém códigos de recuperação com hash, expiração e limite de tentativas.
+ *
+ * Ponto de atencao: Mantenha parâmetros preparados e regras de consulta explícitas. O banco executa SQL, não boas intenções.
+ */
+
 namespace App\Models;
 
 use App\Core\Model;
@@ -67,6 +73,8 @@ final class RecuperacaoSenha extends Model
         $pdo = $this->db();
         $pdo->beginTransaction();
         try {
+            // O lock impede duas abas de consumirem o mesmo codigo ao mesmo
+            // tempo. Sem ele, "uso unico" seria mais uma sugestao editorial.
             $stmt = $pdo->prepare(
                 "SELECT r.id, r.usuario_id, r.token_hash, r.tentativas, r.expira_em
                  FROM recuperacoes_senha r
@@ -88,6 +96,8 @@ final class RecuperacaoSenha extends Model
                 return false;
             }
 
+            // hash_equals evita comparacao vulneravel a timing. O codigo nunca
+            // e salvo em texto puro; suporte tecnico tambem nao precisa ve-lo.
             if (!hash_equals((string) $recuperacao['token_hash'], hash('sha256', $codigo))) {
                 $tentativas = (int) $recuperacao['tentativas'] + 1;
                 $pdo->prepare(
@@ -101,6 +111,9 @@ final class RecuperacaoSenha extends Model
 
             $pdo->prepare('UPDATE usuarios SET senha_hash = ? WHERE id = ?')
                 ->execute([$senhaHash, (int) $recuperacao['usuario_id']]);
+            // Ao trocar a senha, invalidamos todos os codigos ainda abertos do
+            // usuario. Deixar um codigo antigo vivo seria instalar uma porta
+            // nova e guardar a chave velha embaixo do tapete.
             $pdo->prepare(
                 'UPDATE recuperacoes_senha SET usado_em = NOW()
                  WHERE usuario_id = ? AND usado_em IS NULL'

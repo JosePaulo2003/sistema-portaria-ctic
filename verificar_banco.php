@@ -1,6 +1,12 @@
 <?php
 declare(strict_types=1);
 
+/**
+ * GUIA DE MANUTENCAO: Este arquivo faz o diagnóstico controlado da conexão com o banco.
+ *
+ * Ponto de atencao: Mantenha esta página restrita a ambiente local ou debug. Diagnóstico público é fofoca técnica com dados demais.
+ */
+
 // Diagnóstico do banco: fica restrito ao servidor local ou ao desenvolvedor autenticado.
 header('Content-Type: text/html; charset=UTF-8');
 require __DIR__ . '/config/bootstrap.php';

@@ -1,3 +1,7 @@
+/**
+ * GUIA DE MANUTENCAO: Este arquivo envia solicitações gerais do Google Forms para o SGRP.
+ * Ponto de atencao: preserve os seletores usados pelas views. Renomear um data-* sem procurar consumidores e como trocar a fechadura e culpar a chave.
+ */
 // Integra o formulario geral de cadastro com o SGRP.
 
 const SGRP_ENDPOINT = 'https://exemption-escargot-spokesman.ngrok-free.dev/integracoes/google-form/usuarios';

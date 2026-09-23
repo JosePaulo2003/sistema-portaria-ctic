@@ -1,4 +1,9 @@
 <?php
+/**
+ * GUIA DE MANUTENCAO: Este arquivo renderiza a tela relatorio movimentacoes do módulo portaria.
+ *
+ * Ponto de atencao: A view recebe dados prontos. Consultar banco aqui faria o HTML virar controller clandestino, e ninguém precisa desse segundo emprego.
+ */
 $periodoLegivel = formatDateBr($filtros['data']) . ', de ' . $filtros['hora_inicio'] . ' às ' . $filtros['hora_fim'];
 ?>
 

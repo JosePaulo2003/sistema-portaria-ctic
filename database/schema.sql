@@ -1,3 +1,6 @@
+-- GUIA DE MANUTENCAO: Este arquivo define estrutura de referência do banco.
+-- Ponto de atencao: faca backup antes de executar. ROLLBACK escrito depois do desastre continua sendo ficcao cientifica.
+
 CREATE DATABASE IF NOT EXISTS sgrp CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE sgrp;
 

@@ -1,3 +1,5 @@
+# GUIA DE MANUTENCAO: Este script gera os PDFs dos guias do sistema.
+# Ponto de atencao: mantenha fontes e caminhos portaveis; funcionar apenas na maquina do autor nao e uma feature.
 from pathlib import Path
 import unicodedata
 

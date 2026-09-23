@@ -1,4 +1,9 @@
 <?php
+/**
+ * GUIA DE MANUTENCAO: Este arquivo renderiza a tela index do módulo diretor.
+ *
+ * Ponto de atencao: A view recebe dados prontos. Consultar banco aqui faria o HTML virar controller clandestino, e ninguém precisa desse segundo emprego.
+ */
 $periodosResumo = [
     ['titulo' => 'Hoje', 'resumo' => $resumoHoje, 'periodicidade' => 'diario'],
     ['titulo' => 'Nesta semana', 'resumo' => $resumoSemana, 'periodicidade' => 'semanal'],

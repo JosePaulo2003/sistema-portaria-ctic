@@ -1,6 +1,12 @@
 <?php
 declare(strict_types=1);
 
+/**
+ * GUIA DE MANUTENCAO: Este arquivo é o ponto de entrada HTTP e entrega a requisição ao roteador.
+ *
+ * Ponto de atencao: Não revele exceções em produção; stack trace público é documentação premium para atacante.
+ */
+
 // Ponto de entrada da aplicacao; carrega o bootstrap e entrega a requisicao ao roteador.
 header('Content-Type: text/html; charset=UTF-8');
 

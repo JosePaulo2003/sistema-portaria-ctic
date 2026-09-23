@@ -1,6 +1,12 @@
 <?php
 declare(strict_types=1);
 
+/**
+ * GUIA DE MANUTENCAO: Este arquivo implementa o CRUD básico compartilhado pelos models.
+ *
+ * Ponto de atencao: Alterar o núcleo repercute em todas as telas. O bug aqui não é local; ele só começa local para parecer educado.
+ */
+
 namespace App\Core;
 
 use PDO;

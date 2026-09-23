@@ -1,4 +1,9 @@
 <?php
+/**
+ * GUIA DE MANUTENCAO: Este arquivo renderiza a tela admin do módulo layouts.
+ *
+ * Ponto de atencao: A view recebe dados prontos. Consultar banco aqui faria o HTML virar controller clandestino, e ninguém precisa desse segundo emprego.
+ */
 $user = currentUser();
 $profile = fixMojibakeText((string) ($user['perfil_nome'] ?? ''));
 $nav = [

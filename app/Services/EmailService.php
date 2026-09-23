@@ -1,6 +1,12 @@
 <?php
 declare(strict_types=1);
 
+/**
+ * GUIA DE MANUTENCAO: Este arquivo monta e envia mensagens SMTP sem expor credenciais, códigos ou cabeçalhos injetáveis.
+ *
+ * Ponto de atencao: Preserve transações, validações e efeitos colaterais na ordem atual. Reordenar por estética é uma forma criativa de fabricar inconsistência.
+ */
+
 namespace App\Services;
 
 use RuntimeException;
@@ -95,6 +101,9 @@ final class EmailService
 
     private function enviar(string $destinatario, string $assunto, string $texto, string $html): void
     {
+        // Nunca inclua $senha, codigos ou a resposta completa de AUTH em logs.
+        // Diagnostico SMTP bom informa etapa e codigo; diagnostico "completo"
+        // costuma virar vazamento de credencial com excelente rastreabilidade.
         $host = trim((string) config('mail_host', ''));
         $porta = (int) config('mail_port', 587);
         $criptografia = strtolower(trim((string) config('mail_encryption', 'tls')));
@@ -139,6 +148,9 @@ final class EmailService
             $this->comando('EHLO ' . preg_replace('/[^a-zA-Z0-9.-]/', '', $hostname), [250]);
 
             if ($criptografia === 'tls') {
+                // STARTTLS muda o socket existente para um canal cifrado. O
+                // segundo EHLO nao e repeticao decorativa: capacidades podem
+                // mudar depois do handshake.
                 $this->comando('STARTTLS', [220]);
                 $metodoTls = defined('STREAM_CRYPTO_METHOD_TLSv1_3_CLIENT')
                     ? STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT | STREAM_CRYPTO_METHOD_TLSv1_3_CLIENT
@@ -179,6 +191,9 @@ final class EmailService
                 . '--' . $fronteira . "\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n"
                 . rtrim(chunk_split(base64_encode($html), 76, "\r\n")) . "\r\n"
                 . '--' . $fronteira . "--\r\n";
+            // SMTP encerra DATA com uma linha contendo apenas ponto. O dot
+            // stuffing impede que uma linha do corpo encerre o e-mail antes da
+            // hora. Protocolos antigos: sempre reservando uma pegadinha vintage.
             $mensagem = preg_replace('/(?m)^\./', '..', $mensagem) ?? $mensagem;
             fwrite($this->socket, $mensagem . ".\r\n");
             $this->esperar([250]);

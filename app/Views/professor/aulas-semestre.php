@@ -1,2 +1,9 @@
+<?php
+/**
+ * GUIA DE MANUTENCAO: Este arquivo renderiza a tela aulas semestre do módulo professor.
+ *
+ * Ponto de atencao: A view recebe dados prontos. Consultar banco aqui faria o HTML virar controller clandestino, e ninguém precisa desse segundo emprego.
+ */
+?>
 <section class="section-header"><h1>Aulas do Semestre</h1></section>
 <div class="card table-wrap"><table><thead><tr><th>Disciplina</th><th>Sala</th><th>Turma</th><th>Dia</th><th>Horário</th></tr></thead><tbody><?php foreach ($reservas as $r): ?><tr><td><?= e($r['disciplina']) ?></td><td><?= e($r['sala_nome']) ?></td><td><?= e($r['turma']) ?></td><td><?= e($r['dia_semana']) ?></td><td><?= e($r['horario_inicio']) ?> - <?= e($r['horario_fim']) ?></td></tr><?php endforeach; ?></tbody></table></div>

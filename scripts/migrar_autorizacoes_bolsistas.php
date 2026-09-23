@@ -1,6 +1,12 @@
 <?php
 declare(strict_types=1);
 
+/**
+ * GUIA DE MANUTENCAO: Este arquivo aplica a evolução do banco para autorizações de bolsistas.
+ *
+ * Ponto de atencao: Leia a saída antes de comemorar. Script que termina sem barulho pode ter funcionado ou apenas desistido com elegância.
+ */
+
 use App\Core\Database;
 
 $projectDir = rtrim((string) ($argv[1] ?? dirname(__DIR__)), '/\\');

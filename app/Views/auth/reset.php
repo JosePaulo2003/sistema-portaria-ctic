@@ -1,3 +1,10 @@
+<?php
+/**
+ * GUIA DE MANUTENCAO: Este arquivo renderiza a tela reset do módulo auth.
+ *
+ * Ponto de atencao: A view recebe dados prontos. Consultar banco aqui faria o HTML virar controller clandestino, e ninguém precisa desse segundo emprego.
+ */
+?>
 <section class="auth-card">
     <h1>Redefinir senha</h1>
     <p>Digite o código enviado ao seu e-mail e escolha a nova senha.</p>

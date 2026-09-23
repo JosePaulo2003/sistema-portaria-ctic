@@ -1,3 +1,7 @@
+/**
+ * GUIA DE MANUTENCAO: Este arquivo envia cadastros de alunos do Google Forms para o webhook do SGRP.
+ * Ponto de atencao: preserve os seletores usados pelas views. Renomear um data-* sem procurar consumidores e como trocar a fechadura e culpar a chave.
+ */
 // Integra o formulario de alunos com o SGRP.
 // Cole este script no Apps Script da planilha/formulario de alunos e crie um gatilho "Ao enviar formulario".
 

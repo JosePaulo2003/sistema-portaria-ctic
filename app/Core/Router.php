@@ -1,6 +1,12 @@
 <?php
 declare(strict_types=1);
 
+/**
+ * GUIA DE MANUTENCAO: Este arquivo registra rotas, valida método/CSRF e despacha a requisição.
+ *
+ * Ponto de atencao: Alterar o núcleo repercute em todas as telas. O bug aqui não é local; ele só começa local para parecer educado.
+ */
+
 namespace App\Core;
 
 // Roteador simples que transforma URL + metodo HTTP em chamada de controller.
@@ -21,6 +27,8 @@ class Router
     // Uso exclusivo para webhooks autenticados por segredo proprio, sem cookie.
     public function postWithoutCsrf(string $path, array|callable $handler): void
     {
+        // Nao use isto para "resolver" erro 419/CSRF em formulario comum. Essa
+        // solucao tambem resolve o alarme de incendio removendo a bateria.
         $this->add('POST', $path, $handler, false);
     }
 
@@ -49,6 +57,9 @@ class Router
             return;
         }
 
+        // Defesa central: mesmo que uma view esqueca a validacao no controller,
+        // a rota POST normal ainda exige token. Cinto e suspensor ficam menos
+        // engraçados depois do primeiro incidente.
         if ($method === 'POST' && ($route['requires_csrf'] ?? false)) {
             verifyCsrf();
         }

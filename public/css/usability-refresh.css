@@ -1,3 +1,7 @@
+/*
+ * GUIA DE MANUTENCAO: Esta folha aplica os refinamentos responsivos e de usabilidade carregados depois do estilo principal.
+ * Ponto de atencao: respeite a cascata e teste desktop e celular. Mais um !important raramente cura o problema; apenas o promove a problema do futuro.
+ */
 /* SGRP: atualizacao visual e de usabilidade global. */
 html {
   scroll-behavior: smooth;

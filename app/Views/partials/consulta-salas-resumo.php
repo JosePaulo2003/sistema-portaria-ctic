@@ -1,3 +1,10 @@
+<?php
+/**
+ * GUIA DE MANUTENCAO: Este arquivo renderiza a tela consulta salas resumo do módulo partials.
+ *
+ * Ponto de atencao: A view recebe dados prontos. Consultar banco aqui faria o HTML virar controller clandestino, e ninguém precisa desse segundo emprego.
+ */
+?>
 <section class="section-header">
     <h1><?= e($title ?? 'Consulta de Salas') ?></h1>
     <p>Disponibilidade pública por chave retirada, reserva ativa, manutenção ou bloqueio.</p>

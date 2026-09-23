@@ -1,3 +1,7 @@
+/**
+ * GUIA DE MANUTENCAO: Este arquivo coordena os comportamentos da interface usando atributos data-* como contrato com o HTML.
+ * Ponto de atencao: preserve os seletores usados pelas views. Renomear um data-* sem procurar consumidores e como trocar a fechadura e culpar a chave.
+ */
 document.addEventListener('DOMContentLoaded', () => {
   const browserAlerts = [];
   const queueBrowserAlert = (message) => {
@@ -86,6 +90,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const filteredRequests = activeGroup
         ? requests.filter((item) => (item.contexto?.perfil_nome || 'Perfil não informado') === activeGroup)
         : requests;
+      // Evita reconstruir o DOM quando o polling devolve o mesmo estado. Inclua
+      // aqui qualquer campo novo que altere o card; esquecer isso cria o classico
+      // "o backend mudou, mas a tela decidiu viver no passado".
       const signature = JSON.stringify([activeGroup, requests.map((item) => [item.id, item.contexto?.situacao, item.contexto?.tentativas, item.contexto?.expira_em, item.contexto?.grupo_usuario, item.contexto?.codigo_exibicao])]);
       if (signature === lastSignature) return;
       lastSignature = signature;

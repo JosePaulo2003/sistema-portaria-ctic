@@ -1,6 +1,12 @@
 <?php
 declare(strict_types=1);
 
+/**
+ * GUIA DE MANUTENCAO: Este arquivo gera documentos DOCX a partir do modelo de autorização; XML de Word pune improvisos com entusiasmo.
+ *
+ * Ponto de atencao: Preserve transações, validações e efeitos colaterais na ordem atual. Reordenar por estética é uma forma criativa de fabricar inconsistência.
+ */
+
 namespace App\Services;
 
 use DOMDocument;

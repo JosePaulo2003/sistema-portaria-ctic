@@ -1,3 +1,10 @@
+<?php
+/**
+ * GUIA DE MANUTENCAO: Este arquivo renderiza a tela itens do módulo secretario.
+ *
+ * Ponto de atencao: A view recebe dados prontos. Consultar banco aqui faria o HTML virar controller clandestino, e ninguém precisa desse segundo emprego.
+ */
+?>
 <?php $actionPrefix = $actionPrefix ?? '/portaria/itens'; ?>
 
 <section class="section-header"><h1>Itens da Portaria</h1></section>

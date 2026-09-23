@@ -1,6 +1,12 @@
 <?php
 declare(strict_types=1);
 
+/**
+ * GUIA DE MANUTENCAO: Este arquivo corrige bloqueios automáticos atribuídos a perfis indevidos.
+ *
+ * Ponto de atencao: Leia a saída antes de comemorar. Script que termina sem barulho pode ter funcionado ou apenas desistido com elegância.
+ */
+
 if (PHP_SAPI !== 'cli') {
     http_response_code(403);
     exit('Acesso restrito.');
